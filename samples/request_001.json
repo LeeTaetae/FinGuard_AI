@@ -1,0 +1,8 @@
+{
+  "request_id": "REQ-001",
+  "customer_id": "C001",
+  "category": "UNAUTHORIZED_TRANSACTION",
+  "summary": "고객이 03:00 미국에서 결제된 1,200,000원 거래를 본인이 하지 않았다고 신고함. 카드 정지 및 부정사용 접수 요청.",
+  "risk_level": "HIGH",
+  "approved": true
+}
