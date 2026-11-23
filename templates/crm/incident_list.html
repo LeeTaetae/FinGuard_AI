@@ -1,0 +1,21 @@
+{% extends "crm/base.html" %}
+{% block title %}접수 목록{% endblock %}
+{% block content %}
+<h2>사고 접수 목록</h2>
+<table id="incident-table">
+  <tr><th>접수번호</th><th>고객</th><th>사고 유형</th><th>위험도</th><th>상태</th><th>요청 ID</th><th>접수 시각</th></tr>
+  {% for i in incidents %}
+  <tr>
+    <td><a href="{{ url_for('crm_incident_detail', incident_id=i.incident_id) }}">{{ i.incident_id }}</a></td>
+    <td>{{ i.customer_id }} ({{ i.customer_name }})</td>
+    <td>{{ categories.get(i.category, i.category) }}</td>
+    <td>{{ risk_levels.get(i.risk_level, '-') }}</td>
+    <td>{{ statuses.get(i.status, i.status) }}</td>
+    <td>{{ i.request_id or '-' }}</td>
+    <td>{{ i.created_at }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7">접수 내역이 없습니다.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}
