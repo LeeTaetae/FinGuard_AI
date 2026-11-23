@@ -193,6 +193,8 @@ def crm_incident_create():
             form=form, error=message,
         ), 400
 
+    if len(form["request_id"]) > 50:
+        return fail("요청 ID는 50자 이하로 입력해 주세요.")
     if form["category"] not in CATEGORY_LABELS:
         return fail("사고 유형을 선택해 주세요.")
     if not form["summary"] or len(form["summary"]) > 2000:
@@ -206,29 +208,36 @@ def crm_incident_create():
                             (form["customer_id"],)).fetchone():
             return fail("존재하지 않는 고객 ID입니다.")
 
-        if form["request_id"]:
-            existing = conn.execute(
-                "SELECT incident_id FROM incidents WHERE request_id = ?",
-                (form["request_id"],)).fetchone()
-            if existing:  # 재실행 시 새로 만들지 않고 기존 접수번호를 돌려준다
-                return redirect(url_for("crm_incident_detail",
-                                        incident_id=existing["incident_id"], dup=1))
+        # 동시 요청이 확인을 함께 통과해도 UNIQUE 위반 후 재확인으로 기존 접수번호를 돌려준다.
+        # 같은 루프가 incident_id(PK) 충돌 시 새 번호로 재시도도 맡는다.
+        for _ in range(3):
+            if form["request_id"]:
+                existing = conn.execute(
+                    "SELECT incident_id FROM incidents WHERE request_id = ?",
+                    (form["request_id"],)).fetchone()
+                if existing:
+                    return redirect(url_for("crm_incident_detail",
+                                            incident_id=existing["incident_id"], dup=1))
 
-        incident_id = f"INC-{datetime.now():%Y%m%d}-{uuid4().hex[:6].upper()}"
-        conn.execute(
-            """
-            INSERT INTO incidents
-            (incident_id, request_id, customer_id, category, summary, risk_level)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (incident_id, form["request_id"] or None, form["customer_id"],
-             form["category"], form["summary"], form["risk_level"] or None),
-        )
-        conn.commit()
+            incident_id = f"INC-{datetime.now():%Y%m%d}-{uuid4().hex[:6].upper()}"
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO incidents
+                    (incident_id, request_id, customer_id, category, summary, risk_level)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (incident_id, form["request_id"] or None, form["customer_id"],
+                     form["category"], form["summary"], form["risk_level"] or None),
+                )
+                conn.commit()
+                return redirect(url_for("crm_incident_detail", incident_id=incident_id))
+            except sqlite3.IntegrityError:
+                conn.rollback()
     finally:
         conn.close()
 
-    return redirect(url_for("crm_incident_detail", incident_id=incident_id))
+    return fail("접수 중 충돌이 반복되었습니다. 다시 시도해 주세요.")
 
 
 INCIDENT_SELECT = """

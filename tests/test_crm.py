@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 import app as app_module
@@ -62,6 +64,7 @@ def test_duplicate_request_id_returns_existing(client):
     ("category", "NOPE"),
     ("summary", ""),
     ("risk_level", "EXTREME"),
+    ("request_id", "R" * 51),
 ])
 def test_invalid_input_rejected(client, field, value):
     res = client.post("/crm/incidents", data={**VALID, field: value})
@@ -71,3 +74,43 @@ def test_invalid_input_rejected(client, field, value):
 
 def test_unknown_incident_404(client):
     assert client.get("/crm/incidents/INC-NONE").status_code == 404
+
+
+def test_concurrent_same_request_id_returns_existing(client, monkeypatch):
+    first = client.post("/crm/incidents", data=VALID)
+
+    # 다른 요청이 중복 확인을 이미 통과한 상황: 첫 SELECT만 "없음"으로 응답
+    real_connect = app_module.get_db_connection
+
+    class RacingConn:
+        def __init__(self):
+            self.conn, self.missed = real_connect(), False
+
+        def execute(self, sql, *args):
+            if "WHERE request_id" in sql and not self.missed:
+                self.missed = True
+                return self.conn.execute("SELECT 1 WHERE 0")
+            return self.conn.execute(sql, *args)
+
+        def __getattr__(self, name):
+            return getattr(self.conn, name)
+
+    monkeypatch.setattr(app_module, "get_db_connection", RacingConn)
+    second = client.post("/crm/incidents", data=VALID)
+
+    assert second.status_code == 302
+    assert second.headers["Location"].startswith(first.headers["Location"])
+    assert "dup=1" in second.headers["Location"]
+
+
+def test_incident_id_collision_retries(client, monkeypatch):
+    a, b = uuid.UUID("aaaaaa" + "0" * 26), uuid.UUID("bbbbbb" + "0" * 26)
+    ids = iter([a, a, b])
+    monkeypatch.setattr(app_module, "uuid4", lambda: next(ids))
+    manual = {**VALID, "request_id": ""}
+
+    first = client.post("/crm/incidents", data=manual)
+    second = client.post("/crm/incidents", data=manual)
+
+    assert first.status_code == second.status_code == 302
+    assert first.headers["Location"] != second.headers["Location"]
