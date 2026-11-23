@@ -1,0 +1,15 @@
+﻿{
+  "Name": "Submit Incident Button",
+  "Description": "Button that submits the incident form, bottom of the form",
+  "Type": "Element",
+  "TaxonomyType": "Button",
+  "Id": "QYNoH04O1kegP8Q0uZcKGg",
+  "Reference": "F9ggLvmvHkGBkDPI03Dc3Q/QYNoH04O1kegP8Q0uZcKGg",
+  "ParentRef": "F9ggLvmvHkGBkDPI03Dc3Q/7eK6o1lcVUCihT8OEU4tFA",
+  "Created": "2026-11-23T06:24:22.2432449Z",
+  "Updated": "2026-11-23T06:24:22.2432449Z",
+  "CreatedBy": [
+    "UiPath.UIAutomationCore, Version=26.10.7.0, Culture=neutral, PublicKeyToken=null",
+    "UiPath.Platform, Version=26.4.0.0, Culture=neutral, PublicKeyToken=null"
+  ]
+}

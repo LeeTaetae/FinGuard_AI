@@ -1,12 +1,17 @@
-<Activity mc:Ignorable="sap sap2010" x:Class="Workflows_SubmitIncident" VisualBasic.Settings="{x:Null}" sap2010:WorkflowViewState.IdRef="ActivityBuilder_1" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<Activity mc:Ignorable="sap2010" x:Class="Workflows_SubmitIncident" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib" xmlns:sd="clr-namespace:System.Drawing;assembly=System.Drawing.Common" xmlns:sd1="clr-namespace:System.Drawing;assembly=System.Drawing.Primitives" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:uix="http://schemas.uipath.com/workflow/activities/uix" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <x:Members>
     <x:Property Name="in_CrmBaseUrl" Type="InArgument(x:String)" />
+    <x:Property Name="in_RequestId" Type="InArgument(x:String)" />
     <x:Property Name="in_CustomerId" Type="InArgument(x:String)" />
     <x:Property Name="in_Category" Type="InArgument(x:String)" />
     <x:Property Name="in_Summary" Type="InArgument(x:String)" />
     <x:Property Name="in_RiskLevel" Type="InArgument(x:String)" />
     <x:Property Name="out_IncidentNo" Type="OutArgument(x:String)" />
   </x:Members>
+  <VisualBasic.Settings>
+    <x:Null />
+  </VisualBasic.Settings>
+  <sap2010:WorkflowViewState.IdRef>ActivityBuilder_1</sap2010:WorkflowViewState.IdRef>
   <TextExpression.NamespacesForImplementation>
     <sco:Collection x:TypeArguments="x:String">
       <x:String>System.Activities</x:String>
@@ -63,11 +68,137 @@
       <AssemblyReference>System.ComponentModel.TypeConverter</AssemblyReference>
     </sco:Collection>
   </TextExpression.ReferencesForImplementation>
-  <Sequence DisplayName="Submit Incident (3단계에서 구현)" sap2010:WorkflowViewState.IdRef="Sequence_1">
-    <ui:LogMessage DisplayName="TODO 3단계: CRM 자동 입력 미구현" Level="Warn" Message="[&quot;SubmitIncident 미구현 - 3단계에서 CRM 입력 활동을 채웁니다.&quot;]" sap2010:WorkflowViewState.IdRef="LogMessage_1" />
-    <Assign DisplayName="접수번호 비움 (미구현)" sap2010:WorkflowViewState.IdRef="Assign_1">
-      <Assign.To><OutArgument x:TypeArguments="x:String">[out_IncidentNo]</OutArgument></Assign.To>
-      <Assign.Value><InArgument x:TypeArguments="x:String">[String.Empty]</InArgument></Assign.Value>
+  <Sequence DisplayName="Submit Incident" sap2010:WorkflowViewState.IdRef="Sequence_1">
+    <Assign DisplayName="접수번호 초기화" sap2010:WorkflowViewState.IdRef="Assign_1">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[out_IncidentNo]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[String.Empty]</InArgument>
+      </Assign.Value>
     </Assign>
+    <ui:LogMessage DisplayName="CRM 접수 시작" sap2010:WorkflowViewState.IdRef="LogMessage_1" Level="Info" Message="[&quot;CRM 접수 시작: request_id=&quot; &amp; in_RequestId]" />
+    <uix:NApplicationCard AttachMode="ByInstance" DisplayName="Use Browser: FinGuard CRM" HealingAgentBehavior="Job" sap2010:WorkflowViewState.IdRef="NApplicationCard_1" InteractionMode="DebuggerApi" ScopeGuid="e23e8e22-c783-44ae-956c-4421a4ff565c" Version="V2">
+      <uix:NApplicationCard.Body>
+        <ActivityAction x:TypeArguments="x:Object">
+          <ActivityAction.Argument>
+            <DelegateInArgument x:TypeArguments="x:Object" Name="WSSessionData" />
+          </ActivityAction.Argument>
+          <Sequence DisplayName="실행" sap2010:WorkflowViewState.IdRef="Sequence_2">
+            <uix:NGoToUrl DisplayName="접수 양식 페이지로 이동" sap2010:WorkflowViewState.IdRef="NGoToUrl_1" Url="[in_CrmBaseUrl.TrimEnd(&quot;/&quot;c) &amp; &quot;/crm/incidents/new&quot;]" Version="V5" />
+            <uix:NTypeInto ActivateBefore="True" ClickBeforeMode="Single" DisplayName="요청 ID 입력" EmptyFieldMode="SingleLine" HealingAgentBehavior="SameAsCard" sap2010:WorkflowViewState.IdRef="NTypeInto_1" Text="[in_RequestId.Replace(&quot;[&quot;, &quot;[[&quot;)]" Version="V5">
+              <uix:NTypeInto.Target>
+                <uix:TargetAnchorable ContentHash="TZLqJkrtC0WVsO1RQahH7Q" DesignTimeRectangle="543, 292, 850, 38" ElementType="InputBox" ElementVisibilityArgument="Interactive" FuzzySelectorArgument="&lt;webctrl id='incident-form' tag='FORM' matching:id='fuzzy' fuzzylevel:id='0.0' /&gt;&lt;webctrl id='request_id' tag='INPUT' type='' class='' aaname='요청 ID (UiPath 자동 접수 시 입력, 수동 접수는 비워두기)' matching:id='fuzzy' fuzzylevel:id='0.0' matching:class='fuzzy' fuzzylevel:class='0.0' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' /&gt;" Guid="7138af07-851c-44cd-ba32-74592e808e29" InformativeScreenshot="212c8ad1c5cd0cf8a61faf70516f1064.jpg" Reference="F9ggLvmvHkGBkDPI03Dc3Q/PIOwma7nhUeWe7e9lY1nSw" ScopeSelectorArgument="&lt;html app='chrome.exe' title='*FinGuard CRM*' url='http://127.0.0.1:5000/crm*' /&gt;" SearchSteps="FuzzySelector" Version="V6" WaitForReadyArgument="Interactive">
+                  <uix:TargetAnchorable.Anchors>
+                    <scg:List x:TypeArguments="uix:ITarget" Capacity="1">
+                      <uix:Target DesignTimeRectangle="543, 265, 850, 21" ElementType="Text" FuzzySelectorArgument="&lt;webctrl tag='LABEL' type='' class='' aaname='요청 ID ' matching:class='fuzzy' fuzzylevel:class='0.0' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' check:text='요청 ID (UiPath 자동 접수 시 입력, 수동 접수는 비워두기)' /&gt;" Guid="0cb951eb-4785-4893-ab3c-5165d968de21" SearchSteps="FuzzySelector" />
+                    </scg:List>
+                  </uix:TargetAnchorable.Anchors>
+                </uix:TargetAnchorable>
+              </uix:NTypeInto.Target>
+              <uix:NTypeInto.VerifyOptions>
+                <uix:VerifyExecutionTypeIntoOptions Mode="Appears">
+                  <uix:VerifyExecutionTypeIntoOptions.Retry>
+                    <InArgument x:TypeArguments="x:Boolean" />
+                  </uix:VerifyExecutionTypeIntoOptions.Retry>
+                  <uix:VerifyExecutionTypeIntoOptions.Timeout>
+                    <InArgument x:TypeArguments="x:Double" />
+                  </uix:VerifyExecutionTypeIntoOptions.Timeout>
+                </uix:VerifyExecutionTypeIntoOptions>
+              </uix:NTypeInto.VerifyOptions>
+            </uix:NTypeInto>
+            <uix:NTypeInto ActivateBefore="True" ClickBeforeMode="Single" DisplayName="고객 ID 입력" EmptyFieldMode="SingleLine" HealingAgentBehavior="SameAsCard" sap2010:WorkflowViewState.IdRef="NTypeInto_2" Text="[in_CustomerId.Replace(&quot;[&quot;, &quot;[[&quot;)]" Version="V5">
+              <uix:NTypeInto.Target>
+                <uix:TargetAnchorable ContentHash="6mPrRa5AWEqQPGqkH0OCYQ" DesignTimeRectangle="543, 371, 850, 38" ElementType="InputBox" ElementVisibilityArgument="Interactive" FuzzySelectorArgument="&lt;webctrl id='incident-form' tag='FORM' matching:id='fuzzy' fuzzylevel:id='0.0' /&gt;&lt;webctrl id='customer_id' tag='INPUT' type='' class='' placeholder='C001' aaname='고객 ID' matching:id='fuzzy' fuzzylevel:id='0.0' matching:class='fuzzy' fuzzylevel:class='0.0' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' /&gt;" Guid="c69cf4d6-567b-4079-88d8-3923d3fdf45f" InformativeScreenshot="be7c6912975f5cc752d6a7b42b8d561e.jpg" Reference="F9ggLvmvHkGBkDPI03Dc3Q/sSQr7KtuJ0OGxVVQgsvjOw" ScopeSelectorArgument="&lt;html app='chrome.exe' title='*FinGuard CRM*' url='http://127.0.0.1:5000/crm*' /&gt;" SearchSteps="FuzzySelector" Version="V6" WaitForReadyArgument="Interactive">
+                  <uix:TargetAnchorable.Anchors>
+                    <scg:List x:TypeArguments="uix:ITarget" Capacity="1">
+                      <uix:Target DesignTimeRectangle="543, 344, 850, 21" ElementType="Text" FuzzySelectorArgument="&lt;webctrl aaname='고객 ID' tag='LABEL' type='' class='' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' matching:class='fuzzy' fuzzylevel:class='0.0' check:text='고객 ID' /&gt;" Guid="53c25b1b-0074-492b-baa6-720bbb8cfdb0" SearchSteps="FuzzySelector" />
+                    </scg:List>
+                  </uix:TargetAnchorable.Anchors>
+                </uix:TargetAnchorable>
+              </uix:NTypeInto.Target>
+              <uix:NTypeInto.VerifyOptions>
+                <uix:VerifyExecutionTypeIntoOptions Mode="Appears">
+                  <uix:VerifyExecutionTypeIntoOptions.Retry>
+                    <InArgument x:TypeArguments="x:Boolean" />
+                  </uix:VerifyExecutionTypeIntoOptions.Retry>
+                  <uix:VerifyExecutionTypeIntoOptions.Timeout>
+                    <InArgument x:TypeArguments="x:Double" />
+                  </uix:VerifyExecutionTypeIntoOptions.Timeout>
+                </uix:VerifyExecutionTypeIntoOptions>
+              </uix:NTypeInto.VerifyOptions>
+            </uix:NTypeInto>
+            <uix:NSelectItem DisplayName="사고 유형 선택" HealingAgentBehavior="SameAsCard" sap2010:WorkflowViewState.IdRef="NSelectItem_1" Item="[in_Category]" Version="V5">
+              <uix:NSelectItem.Target>
+                <uix:TargetAnchorable ContentHash="OahAd28JeE2DJz8EykwrLQ" DesignTimeRectangle="543, 450, 850, 39" ElementType="DropDown" ElementVisibilityArgument="Interactive" FuzzySelectorArgument="&lt;webctrl id='incident-form' tag='FORM' matching:id='fuzzy' fuzzylevel:id='0.0' /&gt;&lt;webctrl id='category' tag='SELECT' type='' class='' aaname='사고 유형' matching:id='fuzzy' fuzzylevel:id='0.0' matching:class='fuzzy' fuzzylevel:class='0.0' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' /&gt;" Guid="ff8fc57d-0fff-4bbc-a78a-6bdf6d39374c" InformativeScreenshot="cff37308ea19730d1be6afa5f58aa118.jpg" Reference="F9ggLvmvHkGBkDPI03Dc3Q/N8soAHC12ESVZFvVai27Ow" ScopeSelectorArgument="&lt;html app='chrome.exe' title='*FinGuard CRM*' url='http://127.0.0.1:5000/crm*' /&gt;" SearchSteps="FuzzySelector" Version="V6" WaitForReadyArgument="Interactive">
+                  <uix:TargetAnchorable.Anchors>
+                    <scg:List x:TypeArguments="uix:ITarget" Capacity="1">
+                      <uix:Target DesignTimeRectangle="543, 423, 850, 21" ElementType="Text" FuzzySelectorArgument="&lt;webctrl aaname='사고 유형' tag='LABEL' type='' class='' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' matching:class='fuzzy' fuzzylevel:class='0.0' check:text='사고 유형' /&gt;" Guid="07b93a5e-4eb5-4d5c-943b-5bef9a03b50b" SearchSteps="FuzzySelector" />
+                    </scg:List>
+                  </uix:TargetAnchorable.Anchors>
+                </uix:TargetAnchorable>
+              </uix:NSelectItem.Target>
+            </uix:NSelectItem>
+            <uix:NSelectItem DisplayName="위험도 선택" HealingAgentBehavior="SameAsCard" sap2010:WorkflowViewState.IdRef="NSelectItem_2" Item="[in_RiskLevel]" Version="V5">
+              <uix:NSelectItem.Target>
+                <uix:TargetAnchorable ContentHash="t_wFkb6DwU22qRzeDOrZVA" DesignTimeRectangle="543, 530, 850, 39" ElementType="DropDown" ElementVisibilityArgument="Interactive" FuzzySelectorArgument="&lt;webctrl id='incident-form' tag='FORM' matching:id='fuzzy' fuzzylevel:id='0.0' /&gt;&lt;webctrl id='risk_level' tag='SELECT' type='' class='' aaname='위험도' matching:id='fuzzy' fuzzylevel:id='0.0' matching:class='fuzzy' fuzzylevel:class='0.0' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' /&gt;" Guid="d9dff0ce-34b3-424c-8776-09f22034890e" InformativeScreenshot="7a38605ed5e28c6f9d7316deb00bfc37.jpg" Reference="F9ggLvmvHkGBkDPI03Dc3Q/PhN9KGOY202izhLCw5NqLA" ScopeSelectorArgument="&lt;html app='chrome.exe' title='*FinGuard CRM*' url='http://127.0.0.1:5000/crm*' /&gt;" SearchSteps="FuzzySelector" Version="V6" WaitForReadyArgument="Interactive">
+                  <uix:TargetAnchorable.Anchors>
+                    <scg:List x:TypeArguments="uix:ITarget" Capacity="1">
+                      <uix:Target DesignTimeRectangle="543, 503, 850, 21" ElementType="Text" FuzzySelectorArgument="&lt;webctrl aaname='위험도' tag='LABEL' type='' class='' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' matching:class='fuzzy' fuzzylevel:class='0.0' check:text='위험도' /&gt;" Guid="068db086-0864-43a2-9cbb-57cc10ca3451" SearchSteps="FuzzySelector" />
+                    </scg:List>
+                  </uix:TargetAnchorable.Anchors>
+                </uix:TargetAnchorable>
+              </uix:NSelectItem.Target>
+            </uix:NSelectItem>
+            <uix:NTypeInto ActivateBefore="True" ClickBeforeMode="Single" DisplayName="상담 요약 입력" EmptyFieldMode="SingleLine" HealingAgentBehavior="SameAsCard" sap2010:WorkflowViewState.IdRef="NTypeInto_3" Text="[in_Summary.Replace(&quot;[&quot;, &quot;[[&quot;)]" Version="V5">
+              <uix:NTypeInto.Target>
+                <uix:TargetAnchorable ContentHash="_DM89bDYgUGjkI-M3MhKjw" DesignTimeRectangle="543, 610, 850, 110" ElementType="InputBox" ElementVisibilityArgument="Interactive" FuzzySelectorArgument="&lt;webctrl id='incident-form' tag='FORM' matching:id='fuzzy' fuzzylevel:id='0.0' /&gt;&lt;webctrl id='summary' tag='TEXTAREA' type='' class='' aaname='상담 요약' matching:id='fuzzy' fuzzylevel:id='0.0' matching:class='fuzzy' fuzzylevel:class='0.0' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' /&gt;" Guid="ae5e0795-8405-41d3-b76f-d3fb3f4798d5" InformativeScreenshot="d2a5f8f1f7cfb7b5f4e2f2f94d12a798.jpg" Reference="F9ggLvmvHkGBkDPI03Dc3Q/WS_ApJNnk0C6_-hpsFqRJg" ScopeSelectorArgument="&lt;html app='chrome.exe' title='*FinGuard CRM*' url='http://127.0.0.1:5000/crm*' /&gt;" SearchSteps="FuzzySelector" Version="V6" WaitForReadyArgument="Interactive">
+                  <uix:TargetAnchorable.Anchors>
+                    <scg:List x:TypeArguments="uix:ITarget" Capacity="1">
+                      <uix:Target DesignTimeRectangle="543, 583, 850, 21" ElementType="Text" FuzzySelectorArgument="&lt;webctrl aaname='상담 요약' tag='LABEL' type='' class='' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' matching:class='fuzzy' fuzzylevel:class='0.0' check:text='상담 요약' /&gt;" Guid="345ae8ce-9fa5-4747-886c-d69d7fe5dc9b" SearchSteps="FuzzySelector" />
+                    </scg:List>
+                  </uix:TargetAnchorable.Anchors>
+                </uix:TargetAnchorable>
+              </uix:NTypeInto.Target>
+              <uix:NTypeInto.VerifyOptions>
+                <uix:VerifyExecutionTypeIntoOptions Mode="Appears">
+                  <uix:VerifyExecutionTypeIntoOptions.Retry>
+                    <InArgument x:TypeArguments="x:Boolean" />
+                  </uix:VerifyExecutionTypeIntoOptions.Retry>
+                  <uix:VerifyExecutionTypeIntoOptions.Timeout>
+                    <InArgument x:TypeArguments="x:Double" />
+                  </uix:VerifyExecutionTypeIntoOptions.Timeout>
+                </uix:VerifyExecutionTypeIntoOptions>
+              </uix:NTypeInto.VerifyOptions>
+            </uix:NTypeInto>
+            <uix:NClick ActivateBefore="True" ClickType="Single" DisplayName="접수 버튼 클릭" HealingAgentBehavior="SameAsCard" sap2010:WorkflowViewState.IdRef="NClick_1" KeyModifiers="None" MouseButton="Left" Version="V5">
+              <uix:NClick.Target>
+                <uix:TargetAnchorable ContentHash="YTTXRWE4cE--QhYgZuATpw" DesignTimeRectangle="543, 742, 71, 38" ElementType="Button" ElementVisibilityArgument="Interactive" FullSelectorArgument="&lt;webctrl id='incident-form' tag='FORM' /&gt;&lt;webctrl id='submit-incident' tag='BUTTON' /&gt;" Guid="bf19d6bf-e6f7-4999-aaa0-49fb8147b710" InformativeScreenshot="f11888f0976e7121f607c38c2f6912f7.jpg" Reference="F9ggLvmvHkGBkDPI03Dc3Q/QYNoH04O1kegP8Q0uZcKGg" ScopeSelectorArgument="&lt;html app='chrome.exe' title='*FinGuard CRM*' url='http://127.0.0.1:5000/crm*' /&gt;" SearchSteps="Selector" Version="V6" WaitForReadyArgument="Interactive" />
+              </uix:NClick.Target>
+            </uix:NClick>
+            <uix:NGetText DisplayName="접수번호 읽기" HealingAgentBehavior="SameAsCard" sap2010:WorkflowViewState.IdRef="NGetText_1" TextString="[out_IncidentNo]" Version="V5">
+              <uix:NGetText.Target>
+                <uix:TargetAnchorable ContentHash="3HLTvJhcJEq1STQWZJyPCg" DesignTimeRectangle="616, 268, 166, 17" ElementType="Text" ElementVisibilityArgument="Interactive" FullSelectorArgument="&lt;webctrl id='incident-id' tag='B' /&gt;" Guid="178e4a11-79c1-472c-aa6c-c2d1ceb17b13" InformativeScreenshot="8ce867600126edf7027d32187849da3c.jpg" Reference="F9ggLvmvHkGBkDPI03Dc3Q/1LoGMQ_cik-lK1_UGnS7EA" ScopeSelectorArgument="&lt;html app='chrome.exe' title='*FinGuard CRM*' url='http://127.0.0.1:5000/crm*' /&gt;" SearchSteps="Selector" Version="V6" WaitForReadyArgument="Interactive" />
+              </uix:NGetText.Target>
+            </uix:NGetText>
+          </Sequence>
+        </ActivityAction>
+      </uix:NApplicationCard.Body>
+      <uix:NApplicationCard.OCREngine>
+        <ActivityFunc x:TypeArguments="sd:Image, scg:IEnumerable(scg:KeyValuePair(sd1:Rectangle, x:String))">
+          <ActivityFunc.Argument>
+            <DelegateInArgument x:TypeArguments="sd:Image" Name="Image" />
+          </ActivityFunc.Argument>
+        </ActivityFunc>
+      </uix:NApplicationCard.OCREngine>
+      <uix:NApplicationCard.TargetApp>
+        <uix:TargetApp Area="-8, -8, 1936, 1056" BrowserType="Chrome" ContentHash="CPvcEWHDxEKveppUJo_URQ" InformativeScreenshot="404eb0ef16d423f5722e5154d31fc615.jpg" Reference="F9ggLvmvHkGBkDPI03Dc3Q/7eK6o1lcVUCihT8OEU4tFA" Selector="&lt;html app='chrome.exe' title='*FinGuard CRM*' url='http://127.0.0.1:5000/crm*' /&gt;" Url="http://127.0.0.1:5000/crm/incidents/new" Version="V3">
+          <uix:TargetApp.SapInfo>
+            <uix:SAPElementInfo IsSapSubsystem="False" WebAutomationFramework="Default" />
+          </uix:TargetApp.SapInfo>
+        </uix:TargetApp>
+      </uix:NApplicationCard.TargetApp>
+    </uix:NApplicationCard>
+    <ui:LogMessage DisplayName="접수번호 회수 로그" sap2010:WorkflowViewState.IdRef="LogMessage_2" Level="Info" Message="[&quot;CRM 접수번호 회수: &quot; &amp; out_IncidentNo]" />
   </Sequence>
 </Activity>

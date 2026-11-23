@@ -1,0 +1,15 @@
+﻿{
+  "Name": "Summary Input",
+  "Description": "Multi-line text area for the consultation summary, in the incident form",
+  "Type": "Element",
+  "TaxonomyType": "Input",
+  "Id": "WS_ApJNnk0C6_-hpsFqRJg",
+  "Reference": "F9ggLvmvHkGBkDPI03Dc3Q/WS_ApJNnk0C6_-hpsFqRJg",
+  "ParentRef": "F9ggLvmvHkGBkDPI03Dc3Q/7eK6o1lcVUCihT8OEU4tFA",
+  "Created": "2026-11-23T06:24:22.2165821Z",
+  "Updated": "2026-11-23T06:24:22.2165821Z",
+  "CreatedBy": [
+    "UiPath.UIAutomationCore, Version=26.10.7.0, Culture=neutral, PublicKeyToken=null",
+    "UiPath.Platform, Version=26.4.0.0, Culture=neutral, PublicKeyToken=null"
+  ]
+}

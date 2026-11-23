@@ -1,0 +1,15 @@
+﻿{
+  "Name": "Customer Id Input",
+  "Description": "Text input for the customer id, in the incident form",
+  "Type": "Element",
+  "TaxonomyType": "Input",
+  "Id": "sSQr7KtuJ0OGxVVQgsvjOw",
+  "Reference": "F9ggLvmvHkGBkDPI03Dc3Q/sSQr7KtuJ0OGxVVQgsvjOw",
+  "ParentRef": "F9ggLvmvHkGBkDPI03Dc3Q/7eK6o1lcVUCihT8OEU4tFA",
+  "Created": "2026-11-23T06:24:22.1112259Z",
+  "Updated": "2026-11-23T06:24:22.1112259Z",
+  "CreatedBy": [
+    "UiPath.UIAutomationCore, Version=26.10.7.0, Culture=neutral, PublicKeyToken=null",
+    "UiPath.Platform, Version=26.4.0.0, Culture=neutral, PublicKeyToken=null"
+  ]
+}

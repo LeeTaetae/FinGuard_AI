@@ -1,0 +1,13 @@
+﻿{
+  "Name": "FinGuard CRM",
+  "Description": "FinGuard mock CRM web app (Flask), incident intake and list",
+  "Type": "App",
+  "Id": "x9xgnAbkBEudf644VvxsXA",
+  "Reference": "F9ggLvmvHkGBkDPI03Dc3Q/x9xgnAbkBEudf644VvxsXA",
+  "Created": "2026-11-23T06:23:51.9746994Z",
+  "Updated": "2026-11-23T06:23:51.9746994Z",
+  "CreatedBy": [
+    "UiPath.UIAutomationCore, Version=26.10.7.0, Culture=neutral, PublicKeyToken=null",
+    "UiPath.Platform, Version=26.4.0.0, Culture=neutral, PublicKeyToken=null"
+  ]
+}

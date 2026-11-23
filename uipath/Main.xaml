@@ -248,13 +248,14 @@
               </Sequence>
             </If.Then>
           </If>
-          <If DisplayName="CRM 접수 (3단계 구현 예정)" sap2010:WorkflowViewState.IdRef="If_5">
+          <If DisplayName="CRM 접수" sap2010:WorkflowViewState.IdRef="If_5">
             <If.Condition><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="proceed" /></InArgument></If.Condition>
             <If.Then>
               <Sequence DisplayName="Then" sap2010:WorkflowViewState.IdRef="Sequence_7">
                 <ui:InvokeWorkflowFile DisplayName="SubmitIncident 실행" WorkflowFileName="Workflows\SubmitIncident.xaml" sap2010:WorkflowViewState.IdRef="InvokeWorkflowFile_2">
                   <ui:InvokeWorkflowFile.Arguments>
                     <InArgument x:TypeArguments="x:String" x:Key="in_CrmBaseUrl">[crmBaseUrl]</InArgument>
+                    <InArgument x:TypeArguments="x:String" x:Key="in_RequestId">[requestId]</InArgument>
                     <InArgument x:TypeArguments="x:String" x:Key="in_CustomerId">[customerId]</InArgument>
                     <InArgument x:TypeArguments="x:String" x:Key="in_Category">[category]</InArgument>
                     <InArgument x:TypeArguments="x:String" x:Key="in_Summary">[summary]</InArgument>

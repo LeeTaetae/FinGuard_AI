@@ -1,0 +1,17 @@
+﻿{
+  "Name": "CRM Incident Form",
+  "Description": "FinGuard CRM incident intake form page (/crm/incidents/new) and its result view",
+  "Type": "Screen",
+  "Id": "7eK6o1lcVUCihT8OEU4tFA",
+  "Reference": "F9ggLvmvHkGBkDPI03Dc3Q/7eK6o1lcVUCihT8OEU4tFA",
+  "ParentRef": "F9ggLvmvHkGBkDPI03Dc3Q/2aLvB5vJxEiYK6qMHZ9gBw",
+  "Created": "2026-11-23T06:23:55.5627407Z",
+  "Updated": "2026-11-23T06:26:27.2491711Z",
+  "CreatedBy": [
+    "UiPath.UIAutomationCore, Version=26.10.7.0, Culture=neutral, PublicKeyToken=null",
+    "UiPath.Platform, Version=26.4.0.0, Culture=neutral, PublicKeyToken=null"
+  ],
+  "UpdatedBy": [
+    "UiPath.Platform, Version=26.4.0.0, Culture=neutral, PublicKeyToken=null"
+  ]
+}
