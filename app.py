@@ -1,8 +1,13 @@
 
 import sqlite3
 from pathlib import Path
+
 from flask import Flask, jsonify, request
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
 from ai.consultation_analyzer import analyze_consultation
+
 
 app = Flask(__name__)
 app.json.ensure_ascii = False
@@ -11,12 +16,39 @@ BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "database" / "finguard.db"
 
 
+# ==========================================
+# API Rate Limit 설정
+# ==========================================
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    default_limits=[],
+    storage_uri="memory://",
+)
+
+
+@app.errorhandler(429)
+def rate_limit_exceeded(error):
+    return jsonify({
+        "error": "요청 횟수를 초과했습니다. 잠시 후 다시 시도해 주세요."
+    }), 429
+
+
+# ==========================================
+# Database
+# ==========================================
+
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
+
+# ==========================================
+# 기본 API
+# ==========================================
 
 @app.get("/")
 def index():
@@ -32,7 +64,10 @@ def health():
     return jsonify({"status": "ok"})
 
 
-# 전체 고객 조회
+# ==========================================
+# 고객 조회 API
+# ==========================================
+
 @app.get("/api/customers")
 def get_customers():
     conn = get_db_connection()
@@ -48,7 +83,10 @@ def get_customers():
         conn.close()
 
 
-# 전체 거래 내역 조회
+# ==========================================
+# 거래 내역 조회 API
+# ==========================================
+
 @app.get("/api/transactions")
 def get_transactions():
     conn = get_db_connection()
@@ -77,8 +115,14 @@ def get_transactions():
         conn.close()
 
 
+# ==========================================
+# AI 상담 분석 API
+# ==========================================
+
 @app.post("/api/ai/analyze")
+@limiter.limit("5 per minute")
 def analyze_ai():
+
     data = request.get_json(silent=True)
 
     if not isinstance(data, dict):
@@ -100,14 +144,20 @@ def analyze_ai():
 
     try:
         result = analyze_consultation(conversation)
+
         return jsonify(result), 200
 
     except Exception:
         app.logger.exception("AI 상담 분석 실패")
+
         return jsonify({
             "error": "AI 상담 분석 중 오류가 발생했습니다."
         }), 502
 
+
+# ==========================================
+# Flask 실행
+# ==========================================
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
