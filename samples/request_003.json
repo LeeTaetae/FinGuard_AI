@@ -1,7 +1,7 @@
 {
   "request_id": "REQ-003",
   "customer_id": "C002",
-  "category": "일반 결제 문의",
+  "category": "PAYMENT_INQUIRY",
   "summary": "고객이 어제 결제된 61,000원 내역의 가맹점을 문의함. 국내 주간 결제로 특이사항 없음.",
   "risk_level": "LOW",
   "approved": false

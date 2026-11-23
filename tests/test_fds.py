@@ -4,6 +4,7 @@ import pytest
 
 import fds
 import seed
+from database.category_labels import CATEGORY_LABELS, category_label
 
 # 고객별 기대 결과: (risk_level, 사유 키워드)
 EXPECTED = {
@@ -49,7 +50,26 @@ def test_seed_consultations(db_path):
         conn.close()
     assert sum(count for _, count in rows) == 10
     assert {category for category, _ in rows} == {
-        "카드 분실", "카드 부정사용 의심", "일반 결제 문의"}
+        "LOST_CARD", "UNAUTHORIZED_TRANSACTION", "PAYMENT_INQUIRY"}
+
+
+def test_seed_ai_summary_is_empty(db_path):
+    conn = sqlite3.connect(db_path)
+    try:
+        filled = conn.execute(
+            "SELECT COUNT(*) FROM consultations WHERE ai_summary IS NOT NULL"
+        ).fetchone()[0]
+    finally:
+        conn.close()
+    assert filled == 0
+
+
+def test_category_labels_cover_all_codes():
+    codes = {"LOST_CARD", "UNAUTHORIZED_TRANSACTION", "PAYMENT_INQUIRY",
+             "GENERAL_INQUIRY", "OTHER"}
+    assert set(CATEGORY_LABELS) == codes
+    assert category_label("LOST_CARD") == "카드 분실"
+    assert category_label("UNKNOWN") == "UNKNOWN"
 
 
 def test_seed_is_idempotent(db_path):
@@ -99,3 +119,50 @@ def test_unknown_customer_is_low(db_path):
     assert result["risk_score"] == 0
     assert result["risk_level"] == "LOW"
     assert result["reasons"] == []
+
+
+def test_analyze_transaction_uses_only_past(db_path):
+    # T002(03:00)는 C001의 과거 3건(평균 8,000원)만 보고 평가된다
+    result = fds.analyze_transaction("T002", db_path)
+    assert result["risk_score"] == 80
+    assert result["risk_level"] == "HIGH"
+    # T001(14:00)은 이후에 있는 고액 거래(T002)를 보지만 자신은 정상
+    assert fds.analyze_transaction("T001", db_path)["risk_score"] == 0
+
+
+def test_future_transaction_does_not_change_past_score(tmp_path):
+    path = tmp_path / "past_only.db"
+    seed.initialize_database(path)
+    before = fds.analyze_transaction("T013", path)["risk_score"]
+    conn = sqlite3.connect(path)
+    try:
+        conn.execute(
+            "INSERT INTO transactions VALUES "
+            "('TX99', 'C004', 9000000, 'KR', '2026-12-31 12:00:00', 'COMPLETED')"
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    assert fds.analyze_transaction("T013", path)["risk_score"] == before
+
+
+def test_non_completed_transactions_are_ignored(tmp_path):
+    path = tmp_path / "status.db"
+    seed.initialize_database(path)
+    conn = sqlite3.connect(path)
+    try:
+        conn.execute(
+            "UPDATE transactions SET status = 'CANCELED' "
+            "WHERE customer_id = 'C008'"
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    result = fds.analyze_customer("C008", path)
+    assert result["transaction_id"] is None
+    assert result["risk_level"] == "LOW"
+
+
+def test_unknown_transaction_raises(db_path):
+    with pytest.raises(ValueError):
+        fds.analyze_transaction("T999", db_path)
