@@ -12,7 +12,7 @@ def client(tmp_path, monkeypatch):
     db = tmp_path / "test.db"
     monkeypatch.setattr(seed, "DB_PATH", db)
     monkeypatch.setattr(app_module, "DB_PATH", db)
-    seed.initialize_database()
+    seed.initialize_database(db)
     app_module.app.config.update(TESTING=True)
     with app_module.app.test_client() as client:
         yield client
@@ -128,15 +128,38 @@ def test_db_locked_returns_503_retry_page(client, monkeypatch):
     assert 'id="crm-error"' in res.get_data(as_text=True)
 
     api = client.get("/api/customers")
-    assert api.status_code == 503 and "error" in api.json
+    assert api.status_code == 503 and api.json["retryable"] is True
 
 
 def test_missing_table_tells_to_run_seed(client, monkeypatch, tmp_path):
     monkeypatch.setattr(app_module, "DB_PATH", tmp_path / "empty.db")
 
     res = client.get("/crm/incidents")
-    assert res.status_code == 503
-    assert "seed.py" in res.get_data(as_text=True)
+    html = res.get_data(as_text=True)
+    assert res.status_code == 500
+    assert 'id="crm-setup-error"' in html and "seed.py" in html
+
+
+def test_old_schema_db_is_not_retryable(client, monkeypatch, tmp_path):
+    # finguard.db를 다시 만들지 않아 incidents에 request_id 컬럼이 없는 경우
+    old_db = tmp_path / "old.db"
+    seed.initialize_database(old_db)
+    conn = sqlite3.connect(old_db)
+    conn.executescript(
+        "DROP TABLE incidents;"
+        "CREATE TABLE incidents (incident_id TEXT PRIMARY KEY,"
+        " consultation_id TEXT NOT NULL, status TEXT DEFAULT 'PENDING');"
+    )
+    conn.close()
+    monkeypatch.setattr(app_module, "DB_PATH", old_db)
+
+    res = client.post("/crm/incidents", data=VALID)
+    html = res.get_data(as_text=True)
+    assert res.status_code == 500
+    assert 'id="crm-setup-error"' in html and 'id="crm-error"' not in html
+
+    api = client.get("/api/customers")
+    assert api.status_code == 200
 
 
 def test_repeated_id_conflict_returns_503(client, monkeypatch):
