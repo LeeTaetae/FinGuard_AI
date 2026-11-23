@@ -178,6 +178,8 @@
                     </uix:TargetAnchorable>
                   </uix:NSelectItem.Target>
                 </uix:NSelectItem>
+                <If Condition="[Not String.IsNullOrWhiteSpace(in_RiskLevel)]" DisplayName="위험도가 있으면 선택 (없으면 CRM 기본값 '없음')" sap2010:WorkflowViewState.IdRef="If_3">
+                  <If.Then>
                 <uix:NSelectItem DisplayName="위험도 선택" HealingAgentBehavior="SameAsCard" sap2010:WorkflowViewState.IdRef="NSelectItem_2" Item="[in_RiskLevel]" Version="V5">
                   <uix:NSelectItem.Target>
                     <uix:TargetAnchorable ContentHash="t_wFkb6DwU22qRzeDOrZVA" DesignTimeRectangle="543, 530, 850, 39" ElementType="DropDown" ElementVisibilityArgument="Interactive" FuzzySelectorArgument="&lt;webctrl id='incident-form' tag='FORM' matching:id='fuzzy' fuzzylevel:id='0.0' /&gt;&lt;webctrl id='risk_level' tag='SELECT' type='' class='' aaname='위험도' matching:id='fuzzy' fuzzylevel:id='0.0' matching:class='fuzzy' fuzzylevel:class='0.0' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' /&gt;" Guid="d9dff0ce-34b3-424c-8776-09f22034890e" InformativeScreenshot="7a38605ed5e28c6f9d7316deb00bfc37.jpg" Reference="F9ggLvmvHkGBkDPI03Dc3Q/PhN9KGOY202izhLCw5NqLA" ScopeSelectorArgument="&lt;html app='chrome.exe' title='*FinGuard CRM*' url='http://127.0.0.1:5000/crm*' /&gt;" SearchSteps="FuzzySelector" Version="V6" WaitForReadyArgument="Interactive">
@@ -189,6 +191,8 @@
                     </uix:TargetAnchorable>
                   </uix:NSelectItem.Target>
                 </uix:NSelectItem>
+                  </If.Then>
+                </If>
                 <uix:NTypeInto ActivateBefore="True" ClickBeforeMode="Single" DisplayName="상담 요약 입력" EmptyFieldMode="SingleLine" HealingAgentBehavior="SameAsCard" sap2010:WorkflowViewState.IdRef="NTypeInto_3" Text="[in_Summary.Replace(&quot;[&quot;, &quot;[[&quot;)]" Version="V5">
                   <uix:NTypeInto.Target>
                     <uix:TargetAnchorable ContentHash="_DM89bDYgUGjkI-M3MhKjw" DesignTimeRectangle="543, 610, 850, 110" ElementType="InputBox" ElementVisibilityArgument="Interactive" FuzzySelectorArgument="&lt;webctrl id='incident-form' tag='FORM' matching:id='fuzzy' fuzzylevel:id='0.0' /&gt;&lt;webctrl id='summary' tag='TEXTAREA' type='' class='' aaname='상담 요약' matching:id='fuzzy' fuzzylevel:id='0.0' matching:class='fuzzy' fuzzylevel:class='0.0' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' /&gt;" Guid="ae5e0795-8405-41d3-b76f-d3fb3f4798d5" InformativeScreenshot="d2a5f8f1f7cfb7b5f4e2f2f94d12a798.jpg" Reference="F9ggLvmvHkGBkDPI03Dc3Q/WS_ApJNnk0C6_-hpsFqRJg" ScopeSelectorArgument="&lt;html app='chrome.exe' title='*FinGuard CRM*' url='http://127.0.0.1:5000/crm*' /&gt;" SearchSteps="FuzzySelector" Version="V6" WaitForReadyArgument="Interactive">
