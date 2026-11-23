@@ -1,6 +1,7 @@
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
+from statistics import median
 
 DEFAULT_DB_PATH = Path(__file__).resolve().parent / "database" / "finguard.db"
 
@@ -12,8 +13,8 @@ SCORE_REPEATED = 20
 
 # 규칙 기준값
 HOME_COUNTRY = "KR"
-AMOUNT_SPIKE_RATIO = 5          # 과거 거래 평균 대비 배수
-MIN_HISTORY_FOR_SPIKE = 3       # 평균을 낼 최소 과거 거래 수 (미만이면 5배 판정 안 함)
+AMOUNT_SPIKE_RATIO = 5          # 과거 거래 금액 중앙값 대비 배수
+MIN_HISTORY_FOR_SPIKE = 3       # 중앙값을 낼 최소 과거 거래 수 (미만이면 5배 판정 안 함)
 LATE_NIGHT_START_HOUR = 0       # 00:00 이상
 LATE_NIGHT_END_HOUR = 6         # 06:00 미만
 REPEAT_WINDOW_MINUTES = 10      # 기준 거래 직전 N분 이내
@@ -50,17 +51,19 @@ def _score_transaction(tx, history):
     reasons = []
     tx_time = datetime.strptime(tx["transaction_at"], DATETIME_FORMAT)
 
-    if tx["country"] != HOME_COUNTRY:
+    country = (tx["country"] or "").strip().upper()
+    if country != HOME_COUNTRY:
         score += SCORE_OVERSEAS
-        reasons.append(f"해외 결제({tx['country']})")
+        reasons.append(f"해외 결제({country})")
 
     if len(history) >= MIN_HISTORY_FOR_SPIKE:
-        average = sum(h["amount"] for h in history) / len(history)
-        if average > 0 and tx["amount"] >= average * AMOUNT_SPIKE_RATIO:
+        # 평균은 앞선 고액 거래 한두 건에 끌려 올라가므로 중앙값을 쓴다
+        typical = median(h["amount"] for h in history)
+        if typical > 0 and tx["amount"] >= typical * AMOUNT_SPIKE_RATIO:
             score += SCORE_AMOUNT_SPIKE
             reasons.append(
-                f"평소 평균({average:,.0f}원)의 "
-                f"{tx['amount'] / average:.1f}배 결제"
+                f"평소 중앙값({typical:,.0f}원)의 "
+                f"{tx['amount'] / typical:.1f}배 결제"
             )
 
     if LATE_NIGHT_START_HOUR <= tx_time.hour < LATE_NIGHT_END_HOUR:
@@ -89,7 +92,11 @@ def _score_transaction(tx, history):
 
 
 def _connect(db_path):
-    conn = sqlite3.connect(db_path)
+    """읽기 전용으로 연다. 없는 경로는 빈 DB 파일을 만들지 않고 오류를 낸다."""
+    path = Path(db_path)
+    if not path.is_file():
+        raise FileNotFoundError(f"DB 파일이 없습니다: {path}")
+    conn = sqlite3.connect(f"{path.resolve().as_uri()}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -138,10 +145,17 @@ def analyze_customer(customer_id, db_path=DEFAULT_DB_PATH):
     가장 위험한 거래의 결과를 반환한다 (analyze_transaction과 같은 기준).
 
     반환: {transaction_id, risk_score, risk_level, reasons}
-    거래가 없으면 transaction_id=None, 점수 0(LOW).
+    거래가 없는 고객은 transaction_id=None, 점수 0(LOW).
+    없는 고객 ID는 ValueError (analyze_transaction과 동일하게 처리).
     """
     conn = _connect(db_path)
     try:
+        exists = conn.execute(
+            "SELECT 1 FROM customers WHERE customer_id = ?", (customer_id,)
+        ).fetchone()
+        if exists is None:
+            raise ValueError(f"존재하지 않는 고객입니다: {customer_id}")
+
         transactions = [
             dict(r) for r in conn.execute(
                 f"""

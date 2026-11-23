@@ -114,11 +114,39 @@ def test_normal_and_suspicious_are_separated(db_path):
     assert {c for c, lv in levels.items() if lv != "LOW"}
 
 
-def test_unknown_customer_is_low(db_path):
-    result = fds.analyze_customer("C999", db_path)
+def test_unknown_customer_raises(db_path):
+    with pytest.raises(ValueError):
+        fds.analyze_customer("C999", db_path)
+
+
+def test_customer_without_transactions_is_low(tmp_path):
+    path = tmp_path / "new_customer.db"
+    seed.initialize_database(path)
+    conn = sqlite3.connect(path)
+    try:
+        conn.execute(
+            "INSERT INTO customers VALUES ('C777', '신규', NULL, NULL)")
+        conn.commit()
+    finally:
+        conn.close()
+    result = fds.analyze_customer("C777", path)
+    assert result["transaction_id"] is None
     assert result["risk_score"] == 0
     assert result["risk_level"] == "LOW"
     assert result["reasons"] == []
+
+
+def test_missing_db_path_raises_without_creating_file(tmp_path):
+    path = tmp_path / "nothing.db"
+    with pytest.raises(FileNotFoundError):
+        fds.analyze_customer("C001", path)
+    assert not path.exists()
+
+
+def test_country_code_is_normalized(db_path):
+    tx = {"transaction_id": "TX", "amount": 10000, "country": " kr ",
+          "transaction_at": "2026-11-23 12:00:00"}
+    assert fds._score_transaction(tx, [])["risk_score"] == 0
 
 
 def test_analyze_transaction_uses_only_past(db_path):
@@ -126,7 +154,7 @@ def test_analyze_transaction_uses_only_past(db_path):
     result = fds.analyze_transaction("T002", db_path)
     assert result["risk_score"] == 80
     assert result["risk_level"] == "HIGH"
-    # T001(14:00)은 이후에 있는 고액 거래(T002)를 보지만 자신은 정상
+    # T001(14:00)의 과거에는 03:00의 고액 거래(T002)가 있지만 자신은 정상
     assert fds.analyze_transaction("T001", db_path)["risk_score"] == 0
 
 
@@ -166,3 +194,20 @@ def test_non_completed_transactions_are_ignored(tmp_path):
 def test_unknown_transaction_raises(db_path):
     with pytest.raises(ValueError):
         fds.analyze_transaction("T999", db_path)
+
+
+def test_earlier_big_transaction_does_not_hide_the_next_one(tmp_path):
+    # 평균을 쓰면 첫 고액 거래가 평균을 끌어올려 두 번째가 0점이 되던 경우
+    path = tmp_path / "median.db"
+    seed.initialize_database(path)
+    conn = sqlite3.connect(path)
+    try:
+        conn.execute("INSERT INTO transactions VALUES "
+                     "('TXA', 'C002', 900000, 'KR', '2026-11-24 14:00:00', 'COMPLETED')")
+        conn.execute("INSERT INTO transactions VALUES "
+                     "('TXB', 'C002', 900000, 'KR', '2026-11-24 15:00:00', 'COMPLETED')")
+        conn.commit()
+    finally:
+        conn.close()
+    assert fds.analyze_transaction("TXA", path)["risk_score"] == fds.SCORE_AMOUNT_SPIKE
+    assert fds.analyze_transaction("TXB", path)["risk_score"] == fds.SCORE_AMOUNT_SPIKE
