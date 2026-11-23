@@ -1,0 +1,15 @@
+﻿{
+  "Name": "CRM Error Text",
+  "Description": "Message shown on the CRM error page when the CRM cannot process the request (DB error, 503)",
+  "Type": "Element",
+  "TaxonomyType": "Label",
+  "Id": "ePQGIsxLjkyJF89c0-V5Zw",
+  "Reference": "F9ggLvmvHkGBkDPI03Dc3Q/ePQGIsxLjkyJF89c0-V5Zw",
+  "ParentRef": "F9ggLvmvHkGBkDPI03Dc3Q/7eK6o1lcVUCihT8OEU4tFA",
+  "Created": "2026-11-23T07:53:26.1655294Z",
+  "Updated": "2026-11-23T07:53:26.1655294Z",
+  "CreatedBy": [
+    "UiPath.UIAutomationCore, Version=26.10.7.0, Culture=neutral, PublicKeyToken=null",
+    "UiPath.Platform, Version=26.4.0.0, Culture=neutral, PublicKeyToken=null"
+  ]
+}

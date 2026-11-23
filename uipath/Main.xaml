@@ -278,7 +278,7 @@
                             </ui:AssignOperation>
                             <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_22">
                               <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="errorMsg" /></OutArgument></ui:AssignOperation.To>
-                              <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="If(String.IsNullOrWhiteSpace(submittedError), &quot;접수번호를 회수하지 못했습니다&quot;, &quot;CRM 접수 거절: &quot; &amp; submittedError.Trim())" /></InArgument></ui:AssignOperation.Value>
+                              <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="If(String.IsNullOrWhiteSpace(submittedError), &quot;접수번호를 회수하지 못했습니다&quot;, &quot;CRM 접수 실패: &quot; &amp; submittedError.Trim())" /></InArgument></ui:AssignOperation.Value>
                             </ui:AssignOperation>
                           </scg:List>
                         </ui:MultipleAssign.AssignOperations>
@@ -332,7 +332,7 @@
                     </ui:AssignOperation>
                     <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_26">
                       <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="errorMsg" /></OutArgument></ui:AssignOperation.To>
-                      <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="exception.Message" /></InArgument></ui:AssignOperation.Value>
+                      <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="If(exception.GetType().Name = &quot;NodeNotFoundException&quot;, &quot;CRM 화면 요소를 찾지 못했습니다. CRM 서버 연결과 화면 상태를 확인하세요.&quot;, Left(exception.Message.Split(New Char() {ChrW(13), ChrW(10)}, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault(), 200) &amp; &quot; (&quot; &amp; exception.GetType().Name &amp; &quot;)&quot;)" /></InArgument></ui:AssignOperation.Value>
                     </ui:AssignOperation>
                   </scg:List>
                 </ui:MultipleAssign.AssignOperations>
