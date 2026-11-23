@@ -1,0 +1,8 @@
+{
+  "request_id": "REQ-004",
+  "customer_id": "C004",
+  "category": "카드 분실",
+  "summary": "고객이 카드를 분실했다며 사용 중지와 재발급을 요청함. 분실 사고 접수 필요.",
+  "risk_level": "LOW",
+  "approved": true
+}
