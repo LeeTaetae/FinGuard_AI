@@ -20,9 +20,6 @@ LATE_NIGHT_END_HOUR = 6         # 06:00 미만
 REPEAT_WINDOW_MINUTES = 10      # 기준 거래 직전 N분 이내
 REPEAT_MIN_COUNT = 3            # 기준 거래 포함 N건 이상이면 반복
 
-# 점수 계산에 쓰는 거래 상태 (취소·거절 거래는 과거 거래로 보지 않는다)
-STATUS_COUNTED = "COMPLETED"
-
 # 위험 등급 기준 (점수 이상)
 LEVEL_HIGH_MIN = 60
 LEVEL_MEDIUM_MIN = 30
@@ -51,10 +48,9 @@ def _score_transaction(tx, history):
     reasons = []
     tx_time = datetime.strptime(tx["transaction_at"], DATETIME_FORMAT)
 
-    country = (tx["country"] or "").strip().upper()
-    if country != HOME_COUNTRY:
+    if tx["country"] != HOME_COUNTRY:
         score += SCORE_OVERSEAS
-        reasons.append(f"해외 결제({country})")
+        reasons.append(f"해외 결제({tx['country']})")
 
     if len(history) >= MIN_HISTORY_FOR_SPIKE:
         # 평균은 앞선 고액 거래 한두 건에 끌려 올라가므로 중앙값을 쓴다
@@ -92,11 +88,7 @@ def _score_transaction(tx, history):
 
 
 def _connect(db_path):
-    """읽기 전용으로 연다. 없는 경로는 빈 DB 파일을 만들지 않고 오류를 낸다."""
-    path = Path(db_path)
-    if not path.is_file():
-        raise FileNotFoundError(f"DB 파일이 없습니다: {path}")
-    conn = sqlite3.connect(f"{path.resolve().as_uri()}?mode=ro", uri=True)
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -104,10 +96,9 @@ def _connect(db_path):
 def analyze_transaction(transaction_id, db_path=DEFAULT_DB_PATH):
     """거래 1건을 '그 거래 이전의 과거 거래'만으로 평가한다 (실시간 판단용).
 
-    과거 거래 = 같은 고객의 STATUS_COUNTED 상태 거래 중
-    (거래 시각, 거래 ID) 순서에서 대상 거래보다 앞선 것.
+    과거 거래 = 같은 고객의 거래 중 (거래 시각, 거래 ID) 순서에서
+    대상 거래보다 앞선 것.
     반환: {transaction_id, risk_score, risk_level, reasons}
-    없는 거래 ID는 ValueError (위험 없음으로 조용히 넘기지 않는다).
     """
     conn = _connect(db_path)
     try:
@@ -116,20 +107,18 @@ def analyze_transaction(transaction_id, db_path=DEFAULT_DB_PATH):
             "WHERE transaction_id = ?",
             (transaction_id,),
         ).fetchone()
-        if row is None:
-            raise ValueError(f"존재하지 않는 거래입니다: {transaction_id}")
         tx = dict(row)
 
         history = [
             dict(r) for r in conn.execute(
                 f"""
                 SELECT {_TRANSACTION_COLUMNS} FROM transactions
-                WHERE customer_id = ? AND status = ?
+                WHERE customer_id = ?
                   AND (transaction_at < ?
                        OR (transaction_at = ? AND transaction_id < ?))
                 ORDER BY transaction_at, transaction_id
                 """,
-                (tx["customer_id"], STATUS_COUNTED,
+                (tx["customer_id"],
                  tx["transaction_at"], tx["transaction_at"],
                  tx["transaction_id"]),
             ).fetchall()
@@ -145,25 +134,18 @@ def analyze_customer(customer_id, db_path=DEFAULT_DB_PATH):
     가장 위험한 거래의 결과를 반환한다 (analyze_transaction과 같은 기준).
 
     반환: {transaction_id, risk_score, risk_level, reasons}
-    거래가 없는 고객은 transaction_id=None, 점수 0(LOW).
-    없는 고객 ID는 ValueError (analyze_transaction과 동일하게 처리).
+    거래가 없으면 transaction_id=None, 점수 0(LOW).
     """
     conn = _connect(db_path)
     try:
-        exists = conn.execute(
-            "SELECT 1 FROM customers WHERE customer_id = ?", (customer_id,)
-        ).fetchone()
-        if exists is None:
-            raise ValueError(f"존재하지 않는 고객입니다: {customer_id}")
-
         transactions = [
             dict(r) for r in conn.execute(
                 f"""
                 SELECT {_TRANSACTION_COLUMNS} FROM transactions
-                WHERE customer_id = ? AND status = ?
+                WHERE customer_id = ?
                 ORDER BY transaction_at, transaction_id
                 """,
-                (customer_id, STATUS_COUNTED),
+                (customer_id,),
             ).fetchall()
         ]
     finally:
