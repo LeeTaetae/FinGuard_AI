@@ -1,0 +1,36 @@
+{% extends "crm/base.html" %}
+{% block title %}사고 접수{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>사고 접수</h2>
+  {% if error %}<p id="form-error" class="error">{{ error }}</p>{% endif %}
+  <form id="incident-form" method="post" action="{{ url_for('crm_incident_create') }}">
+    <label for="request_id">요청 ID <span class="hint">(UiPath 자동 접수 시 입력, 수동 접수는 비워두기)</span></label>
+    <input id="request_id" name="request_id" value="{{ form.request_id or '' }}" maxlength="50">
+
+    <label for="customer_id">고객 ID</label>
+    <input id="customer_id" name="customer_id" value="{{ form.customer_id or '' }}" required placeholder="C001">
+
+    <label for="category">사고 유형</label>
+    <select id="category" name="category" required>
+      <option value="">선택</option>
+      {% for code, label in categories.items() %}
+      <option value="{{ code }}" {% if form.category == code %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="risk_level">위험도</label>
+    <select id="risk_level" name="risk_level">
+      <option value="">없음</option>
+      {% for code, label in risk_levels.items() %}
+      <option value="{{ code }}" {% if form.risk_level == code %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="summary">상담 요약</label>
+    <textarea id="summary" name="summary" required maxlength="2000">{{ form.summary or '' }}</textarea>
+
+    <button id="submit-incident" type="submit">접수</button>
+  </form>
+</div>
+{% endblock %}

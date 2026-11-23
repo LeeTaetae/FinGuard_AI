@@ -30,13 +30,17 @@ CREATE TABLE IF NOT EXISTS consultations (
 
 CREATE TABLE IF NOT EXISTS incidents (
     incident_id TEXT PRIMARY KEY,
-    consultation_id TEXT NOT NULL,
+    request_id TEXT UNIQUE,              -- UiPath 중복 접수 방지 (수동 접수는 NULL)
+    customer_id TEXT NOT NULL,
+    category TEXT NOT NULL,              -- ai.consultation_analyzer.Category 값
+    summary TEXT NOT NULL,
+    risk_level TEXT,                     -- LOW / MEDIUM / HIGH
+    consultation_id TEXT,
     transaction_id TEXT,
-    risk_score INTEGER,
-    risk_level TEXT,
-    status TEXT DEFAULT 'PENDING',
-    rpa_status TEXT DEFAULT 'NOT_STARTED',
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    status TEXT DEFAULT 'RECEIVED',      -- RECEIVED / IN_PROGRESS / DONE
+    created_at TEXT DEFAULT (datetime('now', 'localtime')),
+    FOREIGN KEY (customer_id)
+        REFERENCES customers(customer_id),
     FOREIGN KEY (consultation_id)
         REFERENCES consultations(consultation_id),
     FOREIGN KEY (transaction_id)
