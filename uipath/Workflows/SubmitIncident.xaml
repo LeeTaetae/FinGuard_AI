@@ -7,6 +7,7 @@
     <x:Property Name="in_Summary" Type="InArgument(x:String)" />
     <x:Property Name="in_RiskLevel" Type="InArgument(x:String)" />
     <x:Property Name="out_IncidentNo" Type="OutArgument(x:String)" />
+    <x:Property Name="out_ErrorMessage" Type="OutArgument(x:String)" />
   </x:Members>
   <VisualBasic.Settings>
     <x:Null />
@@ -69,6 +70,14 @@
     </sco:Collection>
   </TextExpression.ReferencesForImplementation>
   <Sequence DisplayName="Submit Incident" sap2010:WorkflowViewState.IdRef="Sequence_1">
+    <Assign DisplayName="오류 문구 초기화" sap2010:WorkflowViewState.IdRef="Assign_2">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[out_ErrorMessage]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[String.Empty]</InArgument>
+      </Assign.Value>
+    </Assign>
     <Assign DisplayName="접수번호 초기화" sap2010:WorkflowViewState.IdRef="Assign_1">
       <Assign.To>
         <OutArgument x:TypeArguments="x:String">[out_IncidentNo]</OutArgument>
@@ -176,11 +185,29 @@
                 <uix:TargetAnchorable ContentHash="YTTXRWE4cE--QhYgZuATpw" DesignTimeRectangle="543, 742, 71, 38" ElementType="Button" ElementVisibilityArgument="Interactive" FullSelectorArgument="&lt;webctrl id='incident-form' tag='FORM' /&gt;&lt;webctrl id='submit-incident' tag='BUTTON' /&gt;" Guid="bf19d6bf-e6f7-4999-aaa0-49fb8147b710" InformativeScreenshot="f11888f0976e7121f607c38c2f6912f7.jpg" Reference="F9ggLvmvHkGBkDPI03Dc3Q/QYNoH04O1kegP8Q0uZcKGg" ScopeSelectorArgument="&lt;html app='chrome.exe' title='*FinGuard CRM*' url='http://127.0.0.1:5000/crm*' /&gt;" SearchSteps="Selector" Version="V6" WaitForReadyArgument="Interactive" />
               </uix:NClick.Target>
             </uix:NClick>
-            <uix:NGetText DisplayName="접수번호 읽기" HealingAgentBehavior="SameAsCard" sap2010:WorkflowViewState.IdRef="NGetText_1" TextString="[out_IncidentNo]" Version="V5">
-              <uix:NGetText.Target>
+            <uix:NCheckState DisplayName="접수번호가 나타났는지 확인" HealingAgentBehavior="Disabled" sap2010:WorkflowViewState.IdRef="NCheckState_1" Timeout="10" Version="V5">
+              <uix:NCheckState.IfExists>
+                <Sequence DisplayName="접수번호가 나타남" sap2010:WorkflowViewState.IdRef="Sequence_3">
+                  <uix:NGetText DisplayName="접수번호 읽기" HealingAgentBehavior="SameAsCard" sap2010:WorkflowViewState.IdRef="NGetText_1" TextString="[out_IncidentNo]" Version="V5">
+                    <uix:NGetText.Target>
+                      <uix:TargetAnchorable ContentHash="3HLTvJhcJEq1STQWZJyPCg" DesignTimeRectangle="616, 268, 166, 17" ElementType="Text" ElementVisibilityArgument="Interactive" FullSelectorArgument="&lt;webctrl id='incident-id' tag='B' /&gt;" Guid="178e4a11-79c1-472c-aa6c-c2d1ceb17b13" InformativeScreenshot="8ce867600126edf7027d32187849da3c.jpg" Reference="F9ggLvmvHkGBkDPI03Dc3Q/1LoGMQ_cik-lK1_UGnS7EA" ScopeSelectorArgument="&lt;html app='chrome.exe' title='*FinGuard CRM*' url='http://127.0.0.1:5000/crm*' /&gt;" SearchSteps="Selector" Version="V6" WaitForReadyArgument="Interactive" />
+                    </uix:NGetText.Target>
+                  </uix:NGetText>
+                </Sequence>
+              </uix:NCheckState.IfExists>
+              <uix:NCheckState.IfNotExists>
+                <Sequence DisplayName="접수번호가 나타나지 않음 (CRM 오류 문구 읽기)" sap2010:WorkflowViewState.IdRef="Sequence_4">
+                  <uix:NGetText DisplayName="CRM 오류 문구 읽기" HealingAgentBehavior="SameAsCard" sap2010:WorkflowViewState.IdRef="NGetText_2" TextString="[out_ErrorMessage]" Version="V5">
+                    <uix:NGetText.Target>
+                      <uix:TargetAnchorable ContentHash="4JyCeyJqGkyRYgxt7o8Vdw" DesignTimeRectangle="543, 265, 850, 41" ElementType="Text" ElementVisibilityArgument="Interactive" FullSelectorArgument="&lt;webctrl id='form-error' tag='P' /&gt;" Guid="e775cb86-e057-406d-92dd-8d3e3086b05c" InformativeScreenshot="0b5b2004af0aa3b30385c352203b2d71.jpg" Reference="F9ggLvmvHkGBkDPI03Dc3Q/QnVYas5ZNEmRMR8uRt7-6Q" ScopeSelectorArgument="&lt;html app='chrome.exe' title='*FinGuard CRM*' url='http://127.0.0.1:5000/crm*' /&gt;" SearchSteps="Selector" Version="V6" WaitForReadyArgument="Interactive" />
+                    </uix:NGetText.Target>
+                  </uix:NGetText>
+                </Sequence>
+              </uix:NCheckState.IfNotExists>
+              <uix:NCheckState.Target>
                 <uix:TargetAnchorable ContentHash="3HLTvJhcJEq1STQWZJyPCg" DesignTimeRectangle="616, 268, 166, 17" ElementType="Text" ElementVisibilityArgument="Interactive" FullSelectorArgument="&lt;webctrl id='incident-id' tag='B' /&gt;" Guid="178e4a11-79c1-472c-aa6c-c2d1ceb17b13" InformativeScreenshot="8ce867600126edf7027d32187849da3c.jpg" Reference="F9ggLvmvHkGBkDPI03Dc3Q/1LoGMQ_cik-lK1_UGnS7EA" ScopeSelectorArgument="&lt;html app='chrome.exe' title='*FinGuard CRM*' url='http://127.0.0.1:5000/crm*' /&gt;" SearchSteps="Selector" Version="V6" WaitForReadyArgument="Interactive" />
-              </uix:NGetText.Target>
-            </uix:NGetText>
+              </uix:NCheckState.Target>
+            </uix:NCheckState>
           </Sequence>
         </ActivityAction>
       </uix:NApplicationCard.Body>

@@ -83,6 +83,7 @@
       <Variable x:TypeArguments="x:Boolean" Name="isDuplicate" />
       <Variable x:TypeArguments="x:String" Name="dupIncidentNo" />
       <Variable x:TypeArguments="x:String" Name="submittedNo" />
+      <Variable x:TypeArguments="x:String" Name="submittedError" />
     </Sequence.Variables>
     <TryCatch DisplayName="전체 처리 (실패 시에도 멈추지 않고 결과 기록)" sap2010:WorkflowViewState.IdRef="TryCatch_1">
       <TryCatch.Try>
@@ -261,6 +262,7 @@
                     <InArgument x:TypeArguments="x:String" x:Key="in_Summary">[summary]</InArgument>
                     <InArgument x:TypeArguments="x:String" x:Key="in_RiskLevel">[riskLevel]</InArgument>
                     <OutArgument x:TypeArguments="x:String" x:Key="out_IncidentNo">[submittedNo]</OutArgument>
+                    <OutArgument x:TypeArguments="x:String" x:Key="out_ErrorMessage">[submittedError]</OutArgument>
                   </ui:InvokeWorkflowFile.Arguments>
                 </ui:InvokeWorkflowFile>
                 <If DisplayName="접수번호가 비어 있으면 실패" sap2010:WorkflowViewState.IdRef="If_6">
@@ -276,7 +278,7 @@
                             </ui:AssignOperation>
                             <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_22">
                               <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="errorMsg" /></OutArgument></ui:AssignOperation.To>
-                              <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="&quot;접수번호를 회수하지 못했습니다&quot;" /></InArgument></ui:AssignOperation.Value>
+                              <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="If(String.IsNullOrWhiteSpace(submittedError), &quot;접수번호를 회수하지 못했습니다&quot;, &quot;CRM 접수 거절: &quot; &amp; submittedError.Trim())" /></InArgument></ui:AssignOperation.Value>
                             </ui:AssignOperation>
                           </scg:List>
                         </ui:MultipleAssign.AssignOperations>
