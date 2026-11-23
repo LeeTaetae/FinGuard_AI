@@ -1,0 +1,375 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="Main" VisualBasic.Settings="{x:Null}" sap2010:WorkflowViewState.IdRef="ActivityBuilder_1" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:jn="clr-namespace:Newtonsoft.Json.Linq;assembly=Newtonsoft.Json" xmlns:s="clr-namespace:System;assembly=System.Private.CoreLib" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:uix="http://schemas.uipath.com/workflow/activities/uix" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <TextExpression.NamespacesForImplementation>
+    <sco:Collection x:TypeArguments="x:String">
+      <x:String>System.Activities</x:String>
+      <x:String>System.Activities.Statements</x:String>
+      <x:String>System.Activities.Expressions</x:String>
+      <x:String>System.Activities.Validation</x:String>
+      <x:String>System.Activities.XamlIntegration</x:String>
+      <x:String>Microsoft.VisualBasic</x:String>
+      <x:String>Microsoft.VisualBasic.Activities</x:String>
+      <x:String>System</x:String>
+      <x:String>System.Collections</x:String>
+      <x:String>System.Collections.Generic</x:String>
+      <x:String>System.Collections.ObjectModel</x:String>
+      <x:String>System.Data</x:String>
+      <x:String>System.Diagnostics</x:String>
+      <x:String>System.Drawing</x:String>
+      <x:String>System.IO</x:String>
+      <x:String>System.Linq</x:String>
+      <x:String>System.Net.Mail</x:String>
+      <x:String>System.Xml</x:String>
+      <x:String>System.Xml.Linq</x:String>
+      <x:String>UiPath.Core</x:String>
+      <x:String>UiPath.Core.Activities</x:String>
+      <x:String>System.Windows.Markup</x:String>
+      <x:String>GlobalVariablesNamespace</x:String>
+      <x:String>GlobalConstantsNamespace</x:String>
+      <x:String>Newtonsoft.Json.Linq</x:String>
+    </sco:Collection>
+  </TextExpression.NamespacesForImplementation>
+  <TextExpression.ReferencesForImplementation>
+    <sco:Collection x:TypeArguments="AssemblyReference">
+      <AssemblyReference>System.Activities</AssemblyReference>
+      <AssemblyReference>Microsoft.VisualBasic</AssemblyReference>
+      <AssemblyReference>System.Private.CoreLib</AssemblyReference>
+      <AssemblyReference>mscorlib</AssemblyReference>
+      <AssemblyReference>System.Data</AssemblyReference>
+      <AssemblyReference>System</AssemblyReference>
+      <AssemblyReference>System.Linq</AssemblyReference>
+      <AssemblyReference>System.Data.Common</AssemblyReference>
+      <AssemblyReference>System.Drawing</AssemblyReference>
+      <AssemblyReference>System.Drawing.Primitives</AssemblyReference>
+      <AssemblyReference>System.Drawing.Common</AssemblyReference>
+      <AssemblyReference>System.Core</AssemblyReference>
+      <AssemblyReference>System.Xml</AssemblyReference>
+      <AssemblyReference>System.Xml.Linq</AssemblyReference>
+      <AssemblyReference>PresentationFramework</AssemblyReference>
+      <AssemblyReference>WindowsBase</AssemblyReference>
+      <AssemblyReference>PresentationCore</AssemblyReference>
+      <AssemblyReference>System.Xaml</AssemblyReference>
+      <AssemblyReference>UiPath.System.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.UiAutomation.Activities</AssemblyReference>
+      <AssemblyReference>System.Data.DataSetExtensions</AssemblyReference>
+      <AssemblyReference>System.Net.Mail</AssemblyReference>
+      <AssemblyReference>System.ObjectModel</AssemblyReference>
+      <AssemblyReference>System.ComponentModel.TypeConverter</AssemblyReference>
+      <AssemblyReference>System.Collections</AssemblyReference>
+      <AssemblyReference>Newtonsoft.Json</AssemblyReference>
+    </sco:Collection>
+  </TextExpression.ReferencesForImplementation>
+  <Sequence DisplayName="Main Sequence" sap2010:WorkflowViewState.IdRef="Sequence_1">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="configText" />
+      <Variable x:TypeArguments="jn:JObject" Name="config" />
+      <Variable x:TypeArguments="x:String" Name="requestPath" Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:String" Name="resultPath" Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:String" Name="historyPath" Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:String" Name="screenshotDir" Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:String" Name="crmBaseUrl" Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:String" Name="requestText" />
+      <Variable x:TypeArguments="jn:JObject" Name="request" />
+      <Variable x:TypeArguments="x:String" Name="requestId" Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:String" Name="customerId" Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:String" Name="category" Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:String" Name="summary" Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:String" Name="riskLevel" Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:Boolean" Name="approved" />
+      <Variable x:TypeArguments="x:String" Name="missingFields" Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:Boolean" Name="proceed" Default="[True]" />
+      <Variable x:TypeArguments="x:String" Name="status" Default="[&quot;FAILED&quot;]" />
+      <Variable x:TypeArguments="x:String" Name="incidentNo" Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:String" Name="errorMsg" Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:Boolean" Name="isDuplicate" />
+      <Variable x:TypeArguments="x:String" Name="dupIncidentNo" />
+      <Variable x:TypeArguments="x:String" Name="submittedNo" />
+    </Sequence.Variables>
+    <TryCatch DisplayName="전체 처리 (실패 시에도 멈추지 않고 결과 기록)" sap2010:WorkflowViewState.IdRef="TryCatch_1">
+      <TryCatch.Try>
+        <Sequence DisplayName="Try" sap2010:WorkflowViewState.IdRef="Sequence_2">
+          <ui:LogMessage DisplayName="시작 로그" Level="Info" Message="[&quot;FinGuard RPA 시작&quot;]" sap2010:WorkflowViewState.IdRef="LogMessage_1" />
+          <ui:ReadTextFile DisplayName="Config.json 읽기" FileName="Data\Config.json" Content="[configText]" sap2010:WorkflowViewState.IdRef="ReadTextFile_1" />
+          <Assign DisplayName="Config 파싱" sap2010:WorkflowViewState.IdRef="Assign_1">
+            <Assign.To><OutArgument x:TypeArguments="jn:JObject">[config]</OutArgument></Assign.To>
+            <Assign.Value><InArgument x:TypeArguments="jn:JObject">[Newtonsoft.Json.Linq.JObject.Parse(configText)]</InArgument></Assign.Value>
+          </Assign>
+          <ui:MultipleAssign DisplayName="Config 값 적용" sap2010:WorkflowViewState.IdRef="MultipleAssign_1">
+            <ui:MultipleAssign.AssignOperations>
+              <scg:List x:TypeArguments="ui:AssignOperation" Capacity="5">
+                <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_1">
+                  <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="requestPath" /></OutArgument></ui:AssignOperation.To>
+                  <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="config.Value(Of String)(&quot;RequestPath&quot;)" /></InArgument></ui:AssignOperation.Value>
+                </ui:AssignOperation>
+                <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_2">
+                  <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="resultPath" /></OutArgument></ui:AssignOperation.To>
+                  <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="config.Value(Of String)(&quot;ResultPath&quot;)" /></InArgument></ui:AssignOperation.Value>
+                </ui:AssignOperation>
+                <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_3">
+                  <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="historyPath" /></OutArgument></ui:AssignOperation.To>
+                  <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="config.Value(Of String)(&quot;HistoryPath&quot;)" /></InArgument></ui:AssignOperation.Value>
+                </ui:AssignOperation>
+                <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_4">
+                  <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="screenshotDir" /></OutArgument></ui:AssignOperation.To>
+                  <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="config.Value(Of String)(&quot;ScreenshotDir&quot;)" /></InArgument></ui:AssignOperation.Value>
+                </ui:AssignOperation>
+                <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_5">
+                  <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="crmBaseUrl" /></OutArgument></ui:AssignOperation.To>
+                  <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="config.Value(Of String)(&quot;CrmBaseUrl&quot;)" /></InArgument></ui:AssignOperation.Value>
+                </ui:AssignOperation>
+              </scg:List>
+            </ui:MultipleAssign.AssignOperations>
+          </ui:MultipleAssign>
+          <ui:ReadTextFile DisplayName="request.json 읽기" FileName="[requestPath]" Content="[requestText]" sap2010:WorkflowViewState.IdRef="ReadTextFile_2" />
+          <Assign DisplayName="요청 파싱" sap2010:WorkflowViewState.IdRef="Assign_2">
+            <Assign.To><OutArgument x:TypeArguments="jn:JObject">[request]</OutArgument></Assign.To>
+            <Assign.Value><InArgument x:TypeArguments="jn:JObject">[Newtonsoft.Json.Linq.JObject.Parse(requestText)]</InArgument></Assign.Value>
+          </Assign>
+          <ui:MultipleAssign DisplayName="요청 필드 추출" sap2010:WorkflowViewState.IdRef="MultipleAssign_2">
+            <ui:MultipleAssign.AssignOperations>
+              <scg:List x:TypeArguments="ui:AssignOperation" Capacity="6">
+                <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_6">
+                  <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="requestId" /></OutArgument></ui:AssignOperation.To>
+                  <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="If(request.Value(Of String)(&quot;request_id&quot;), String.Empty)" /></InArgument></ui:AssignOperation.Value>
+                </ui:AssignOperation>
+                <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_7">
+                  <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="customerId" /></OutArgument></ui:AssignOperation.To>
+                  <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="If(request.Value(Of String)(&quot;customer_id&quot;), String.Empty)" /></InArgument></ui:AssignOperation.Value>
+                </ui:AssignOperation>
+                <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_8">
+                  <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="category" /></OutArgument></ui:AssignOperation.To>
+                  <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="If(request.Value(Of String)(&quot;category&quot;), String.Empty)" /></InArgument></ui:AssignOperation.Value>
+                </ui:AssignOperation>
+                <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_9">
+                  <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="summary" /></OutArgument></ui:AssignOperation.To>
+                  <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="If(request.Value(Of String)(&quot;summary&quot;), String.Empty)" /></InArgument></ui:AssignOperation.Value>
+                </ui:AssignOperation>
+                <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_10">
+                  <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="riskLevel" /></OutArgument></ui:AssignOperation.To>
+                  <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="If(request.Value(Of String)(&quot;risk_level&quot;), String.Empty)" /></InArgument></ui:AssignOperation.Value>
+                </ui:AssignOperation>
+                <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_11">
+                  <ui:AssignOperation.To><OutArgument x:TypeArguments="x:Boolean"><VisualBasicReference x:TypeArguments="x:Boolean" ExpressionText="approved" /></OutArgument></ui:AssignOperation.To>
+                  <ui:AssignOperation.Value><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="request.Value(Of Boolean)(&quot;approved&quot;)" /></InArgument></ui:AssignOperation.Value>
+                </ui:AssignOperation>
+              </scg:List>
+            </ui:MultipleAssign.AssignOperations>
+          </ui:MultipleAssign>
+          <Assign DisplayName="누락 필드 확인" sap2010:WorkflowViewState.IdRef="Assign_3">
+            <Assign.To><OutArgument x:TypeArguments="x:String">[missingFields]</OutArgument></Assign.To>
+            <Assign.Value><InArgument x:TypeArguments="x:String">[String.Join(", ", New String() {If(requestId = "", "request_id", ""), If(customerId = "", "customer_id", ""), If(category = "", "category", ""), If(summary = "", "summary", ""), If(riskLevel = "", "risk_level", "")}.Where(Function(f) f &lt;&gt; ""))]</InArgument></Assign.Value>
+          </Assign>
+          <If DisplayName="필수 필드가 비어 있으면 실패" sap2010:WorkflowViewState.IdRef="If_1">
+            <If.Condition><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="missingFields &lt;&gt; &quot;&quot;" /></InArgument></If.Condition>
+            <If.Then>
+              <Sequence DisplayName="Then" sap2010:WorkflowViewState.IdRef="Sequence_3">
+                <ui:MultipleAssign DisplayName="FAILED 설정" sap2010:WorkflowViewState.IdRef="MultipleAssign_3">
+                  <ui:MultipleAssign.AssignOperations>
+                    <scg:List x:TypeArguments="ui:AssignOperation" Capacity="3">
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_12">
+                        <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="status" /></OutArgument></ui:AssignOperation.To>
+                        <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="&quot;FAILED&quot;" /></InArgument></ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_13">
+                        <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="errorMsg" /></OutArgument></ui:AssignOperation.To>
+                        <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="&quot;필수 필드 누락: &quot; &amp; missingFields" /></InArgument></ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_14">
+                        <ui:AssignOperation.To><OutArgument x:TypeArguments="x:Boolean"><VisualBasicReference x:TypeArguments="x:Boolean" ExpressionText="proceed" /></OutArgument></ui:AssignOperation.To>
+                        <ui:AssignOperation.Value><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="False" /></InArgument></ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                    </scg:List>
+                  </ui:MultipleAssign.AssignOperations>
+                </ui:MultipleAssign>
+              </Sequence>
+            </If.Then>
+          </If>
+          <If DisplayName="approved 가 true 가 아니면 거부" sap2010:WorkflowViewState.IdRef="If_2">
+            <If.Condition><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="proceed AndAlso Not approved" /></InArgument></If.Condition>
+            <If.Then>
+              <Sequence DisplayName="Then" sap2010:WorkflowViewState.IdRef="Sequence_4">
+                <ui:MultipleAssign DisplayName="REJECTED 설정" sap2010:WorkflowViewState.IdRef="MultipleAssign_4">
+                  <ui:MultipleAssign.AssignOperations>
+                    <scg:List x:TypeArguments="ui:AssignOperation" Capacity="3">
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_15">
+                        <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="status" /></OutArgument></ui:AssignOperation.To>
+                        <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="&quot;REJECTED&quot;" /></InArgument></ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_16">
+                        <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="errorMsg" /></OutArgument></ui:AssignOperation.To>
+                        <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="&quot;승인되지 않은 요청입니다 (approved 가 true 가 아님)&quot;" /></InArgument></ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                      <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_17">
+                        <ui:AssignOperation.To><OutArgument x:TypeArguments="x:Boolean"><VisualBasicReference x:TypeArguments="x:Boolean" ExpressionText="proceed" /></OutArgument></ui:AssignOperation.To>
+                        <ui:AssignOperation.Value><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="False" /></InArgument></ui:AssignOperation.Value>
+                      </ui:AssignOperation>
+                    </scg:List>
+                  </ui:MultipleAssign.AssignOperations>
+                </ui:MultipleAssign>
+              </Sequence>
+            </If.Then>
+          </If>
+          <If DisplayName="중복 request_id 확인" sap2010:WorkflowViewState.IdRef="If_3">
+            <If.Condition><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="proceed" /></InArgument></If.Condition>
+            <If.Then>
+              <Sequence DisplayName="Then" sap2010:WorkflowViewState.IdRef="Sequence_5">
+                <ui:InvokeWorkflowFile DisplayName="CheckHistory 실행" WorkflowFileName="Workflows\CheckHistory.xaml" sap2010:WorkflowViewState.IdRef="InvokeWorkflowFile_1">
+                  <ui:InvokeWorkflowFile.Arguments>
+                    <InArgument x:TypeArguments="x:String" x:Key="in_HistoryPath">[historyPath]</InArgument>
+                    <InArgument x:TypeArguments="x:String" x:Key="in_RequestId">[requestId]</InArgument>
+                    <OutArgument x:TypeArguments="x:Boolean" x:Key="out_IsDuplicate">[isDuplicate]</OutArgument>
+                    <OutArgument x:TypeArguments="x:String" x:Key="out_IncidentNo">[dupIncidentNo]</OutArgument>
+                  </ui:InvokeWorkflowFile.Arguments>
+                </ui:InvokeWorkflowFile>
+                <If DisplayName="이미 처리된 요청이면 중복 종료" sap2010:WorkflowViewState.IdRef="If_4">
+                  <If.Condition><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="isDuplicate" /></InArgument></If.Condition>
+                  <If.Then>
+                    <Sequence DisplayName="Then" sap2010:WorkflowViewState.IdRef="Sequence_6">
+                      <ui:MultipleAssign DisplayName="DUPLICATE 설정" sap2010:WorkflowViewState.IdRef="MultipleAssign_5">
+                        <ui:MultipleAssign.AssignOperations>
+                          <scg:List x:TypeArguments="ui:AssignOperation" Capacity="3">
+                            <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_18">
+                              <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="status" /></OutArgument></ui:AssignOperation.To>
+                              <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="&quot;DUPLICATE&quot;" /></InArgument></ui:AssignOperation.Value>
+                            </ui:AssignOperation>
+                            <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_19">
+                              <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="incidentNo" /></OutArgument></ui:AssignOperation.To>
+                              <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="dupIncidentNo" /></InArgument></ui:AssignOperation.Value>
+                            </ui:AssignOperation>
+                            <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_20">
+                              <ui:AssignOperation.To><OutArgument x:TypeArguments="x:Boolean"><VisualBasicReference x:TypeArguments="x:Boolean" ExpressionText="proceed" /></OutArgument></ui:AssignOperation.To>
+                              <ui:AssignOperation.Value><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="False" /></InArgument></ui:AssignOperation.Value>
+                            </ui:AssignOperation>
+                          </scg:List>
+                        </ui:MultipleAssign.AssignOperations>
+                      </ui:MultipleAssign>
+                    </Sequence>
+                  </If.Then>
+                </If>
+              </Sequence>
+            </If.Then>
+          </If>
+          <If DisplayName="CRM 접수 (3단계 구현 예정)" sap2010:WorkflowViewState.IdRef="If_5">
+            <If.Condition><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="proceed" /></InArgument></If.Condition>
+            <If.Then>
+              <Sequence DisplayName="Then" sap2010:WorkflowViewState.IdRef="Sequence_7">
+                <ui:InvokeWorkflowFile DisplayName="SubmitIncident 실행" WorkflowFileName="Workflows\SubmitIncident.xaml" sap2010:WorkflowViewState.IdRef="InvokeWorkflowFile_2">
+                  <ui:InvokeWorkflowFile.Arguments>
+                    <InArgument x:TypeArguments="x:String" x:Key="in_CrmBaseUrl">[crmBaseUrl]</InArgument>
+                    <InArgument x:TypeArguments="x:String" x:Key="in_CustomerId">[customerId]</InArgument>
+                    <InArgument x:TypeArguments="x:String" x:Key="in_Category">[category]</InArgument>
+                    <InArgument x:TypeArguments="x:String" x:Key="in_Summary">[summary]</InArgument>
+                    <InArgument x:TypeArguments="x:String" x:Key="in_RiskLevel">[riskLevel]</InArgument>
+                    <OutArgument x:TypeArguments="x:String" x:Key="out_IncidentNo">[submittedNo]</OutArgument>
+                  </ui:InvokeWorkflowFile.Arguments>
+                </ui:InvokeWorkflowFile>
+                <If DisplayName="접수번호가 비어 있으면 실패" sap2010:WorkflowViewState.IdRef="If_6">
+                  <If.Condition><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="String.IsNullOrWhiteSpace(submittedNo)" /></InArgument></If.Condition>
+                  <If.Then>
+                    <Sequence DisplayName="Then" sap2010:WorkflowViewState.IdRef="Sequence_8">
+                      <ui:MultipleAssign DisplayName="FAILED 설정 (접수번호 없음)" sap2010:WorkflowViewState.IdRef="MultipleAssign_6">
+                        <ui:MultipleAssign.AssignOperations>
+                          <scg:List x:TypeArguments="ui:AssignOperation" Capacity="2">
+                            <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_21">
+                              <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="status" /></OutArgument></ui:AssignOperation.To>
+                              <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="&quot;FAILED&quot;" /></InArgument></ui:AssignOperation.Value>
+                            </ui:AssignOperation>
+                            <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_22">
+                              <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="errorMsg" /></OutArgument></ui:AssignOperation.To>
+                              <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="&quot;접수번호를 회수하지 못했습니다&quot;" /></InArgument></ui:AssignOperation.Value>
+                            </ui:AssignOperation>
+                          </scg:List>
+                        </ui:MultipleAssign.AssignOperations>
+                      </ui:MultipleAssign>
+                    </Sequence>
+                  </If.Then>
+                  <If.Else>
+                    <Sequence DisplayName="Else" sap2010:WorkflowViewState.IdRef="Sequence_9">
+                      <ui:MultipleAssign DisplayName="SUCCESS 설정" sap2010:WorkflowViewState.IdRef="MultipleAssign_7">
+                        <ui:MultipleAssign.AssignOperations>
+                          <scg:List x:TypeArguments="ui:AssignOperation" Capacity="2">
+                            <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_23">
+                              <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="status" /></OutArgument></ui:AssignOperation.To>
+                              <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="&quot;SUCCESS&quot;" /></InArgument></ui:AssignOperation.Value>
+                            </ui:AssignOperation>
+                            <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_24">
+                              <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="incidentNo" /></OutArgument></ui:AssignOperation.To>
+                              <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="submittedNo" /></InArgument></ui:AssignOperation.Value>
+                            </ui:AssignOperation>
+                          </scg:List>
+                        </ui:MultipleAssign.AssignOperations>
+                      </ui:MultipleAssign>
+                      <ui:InvokeWorkflowFile DisplayName="UpdateHistory 실행" WorkflowFileName="Workflows\UpdateHistory.xaml" sap2010:WorkflowViewState.IdRef="InvokeWorkflowFile_3">
+                        <ui:InvokeWorkflowFile.Arguments>
+                          <InArgument x:TypeArguments="x:String" x:Key="in_HistoryPath">[historyPath]</InArgument>
+                          <InArgument x:TypeArguments="x:String" x:Key="in_RequestId">[requestId]</InArgument>
+                          <InArgument x:TypeArguments="x:String" x:Key="in_IncidentNo">[incidentNo]</InArgument>
+                        </ui:InvokeWorkflowFile.Arguments>
+                      </ui:InvokeWorkflowFile>
+                    </Sequence>
+                  </If.Else>
+                </If>
+              </Sequence>
+            </If.Then>
+          </If>
+        </Sequence>
+      </TryCatch.Try>
+      <TryCatch.Catches>
+        <Catch x:TypeArguments="s:Exception" sap2010:WorkflowViewState.IdRef="Catch`1_1">
+          <ActivityAction x:TypeArguments="s:Exception">
+            <ActivityAction.Argument>
+              <DelegateInArgument x:TypeArguments="s:Exception" Name="exception" />
+            </ActivityAction.Argument>
+            <Sequence DisplayName="Catch" sap2010:WorkflowViewState.IdRef="Sequence_10">
+              <ui:MultipleAssign DisplayName="FAILED 설정 (예외)" sap2010:WorkflowViewState.IdRef="MultipleAssign_8">
+                <ui:MultipleAssign.AssignOperations>
+                  <scg:List x:TypeArguments="ui:AssignOperation" Capacity="2">
+                    <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_25">
+                      <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="status" /></OutArgument></ui:AssignOperation.To>
+                      <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="&quot;FAILED&quot;" /></InArgument></ui:AssignOperation.Value>
+                    </ui:AssignOperation>
+                    <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_26">
+                      <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String"><VisualBasicReference x:TypeArguments="x:String" ExpressionText="errorMsg" /></OutArgument></ui:AssignOperation.To>
+                      <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String"><VisualBasicValue x:TypeArguments="x:String" ExpressionText="exception.Message" /></InArgument></ui:AssignOperation.Value>
+                    </ui:AssignOperation>
+                  </scg:List>
+                </ui:MultipleAssign.AssignOperations>
+              </ui:MultipleAssign>
+              <ui:LogMessage DisplayName="예외 로그" Level="Error" Message="[&quot;FinGuard RPA 실패: &quot; &amp; exception.ToString()]" sap2010:WorkflowViewState.IdRef="LogMessage_2" />
+              <If DisplayName="스크린샷 폴더가 설정되어 있으면 저장" sap2010:WorkflowViewState.IdRef="If_7">
+                <If.Condition><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="screenshotDir &lt;&gt; &quot;&quot;" /></InArgument></If.Condition>
+                <If.Then>
+                  <Sequence DisplayName="Then" sap2010:WorkflowViewState.IdRef="Sequence_11">
+                    <ui:CreateDirectory DisplayName="스크린샷 폴더 생성" Path="[screenshotDir]" ContinueOnError="True" sap2010:WorkflowViewState.IdRef="CreateDirectory_1" />
+                    <uix:NTakeScreenshot DisplayName="실패 스크린샷" FileName="[System.IO.Path.Combine(screenshotDir, If(requestId = &quot;&quot;, &quot;unknown&quot;, requestId) &amp; &quot;_&quot; &amp; DateTime.Now.ToString(&quot;yyyyMMdd_HHmmss&quot;) &amp; &quot;.png&quot;)]" FileNameMode="None" ContinueOnError="True" HealingAgentBehavior="SameAsCard" Version="V5" sap2010:WorkflowViewState.IdRef="NTakeScreenshot_1" />
+                  </Sequence>
+                </If.Then>
+              </If>
+            </Sequence>
+          </ActivityAction>
+        </Catch>
+      </TryCatch.Catches>
+    </TryCatch>
+    <ui:LogMessage DisplayName="처리 결과 로그" Level="Info" Message="[&quot;request_id=&quot; &amp; requestId &amp; &quot; status=&quot; &amp; status &amp; &quot; incident_no=&quot; &amp; incidentNo &amp; &quot; error=&quot; &amp; errorMsg]" sap2010:WorkflowViewState.IdRef="LogMessage_3" />
+    <If DisplayName="결과 경로를 알면 result.json 기록" sap2010:WorkflowViewState.IdRef="If_8">
+      <If.Condition><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="resultPath &lt;&gt; &quot;&quot;" /></InArgument></If.Condition>
+      <If.Then>
+        <Sequence DisplayName="Then" sap2010:WorkflowViewState.IdRef="Sequence_12">
+          <ui:InvokeWorkflowFile DisplayName="WriteResult 실행" WorkflowFileName="Workflows\WriteResult.xaml" sap2010:WorkflowViewState.IdRef="InvokeWorkflowFile_4">
+            <ui:InvokeWorkflowFile.Arguments>
+              <InArgument x:TypeArguments="x:String" x:Key="in_ResultPath">[resultPath]</InArgument>
+              <InArgument x:TypeArguments="x:String" x:Key="in_RequestId">[requestId]</InArgument>
+              <InArgument x:TypeArguments="x:String" x:Key="in_Status">[status]</InArgument>
+              <InArgument x:TypeArguments="x:String" x:Key="in_IncidentNo">[incidentNo]</InArgument>
+              <InArgument x:TypeArguments="x:String" x:Key="in_Error">[errorMsg]</InArgument>
+            </ui:InvokeWorkflowFile.Arguments>
+          </ui:InvokeWorkflowFile>
+        </Sequence>
+      </If.Then>
+      <If.Else>
+        <Sequence DisplayName="Else" sap2010:WorkflowViewState.IdRef="Sequence_13">
+          <ui:LogMessage DisplayName="결과 경로 없음 로그" Level="Error" Message="[&quot;ResultPath 를 알 수 없어 result.json 을 쓰지 못했습니다 (Config 로드 실패).&quot;]" sap2010:WorkflowViewState.IdRef="LogMessage_4" />
+        </Sequence>
+      </If.Else>
+    </If>
+  </Sequence>
+</Activity>

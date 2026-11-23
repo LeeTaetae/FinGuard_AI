@@ -1,0 +1,6 @@
+{
+  "Name": "FinGuard_AI",
+  "ProjectType": "Process",
+  "Description": "FinGuard_AI",
+  "MainFile": "Main.xaml"
+}
