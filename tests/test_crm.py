@@ -1,3 +1,4 @@
+import sqlite3
 import uuid
 
 import pytest
@@ -114,3 +115,44 @@ def test_incident_id_collision_retries(client, monkeypatch):
 
     assert first.status_code == second.status_code == 302
     assert first.headers["Location"] != second.headers["Location"]
+
+
+def test_db_locked_returns_503_retry_page(client, monkeypatch):
+    def locked():
+        raise sqlite3.OperationalError("database is locked")
+
+    monkeypatch.setattr(app_module, "get_db_connection", locked)
+
+    res = client.post("/crm/incidents", data=VALID)
+    assert res.status_code == 503
+    assert 'id="crm-error"' in res.get_data(as_text=True)
+
+    api = client.get("/api/customers")
+    assert api.status_code == 503 and "error" in api.json
+
+
+def test_missing_table_tells_to_run_seed(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(app_module, "DB_PATH", tmp_path / "empty.db")
+
+    res = client.get("/crm/incidents")
+    assert res.status_code == 503
+    assert "seed.py" in res.get_data(as_text=True)
+
+
+def test_repeated_id_conflict_returns_503(client, monkeypatch):
+    monkeypatch.setattr(app_module, "uuid4", lambda: uuid.UUID("c" * 32))
+    manual = {**VALID, "request_id": ""}
+
+    assert client.post("/crm/incidents", data=manual).status_code == 302
+    res = client.post("/crm/incidents", data=manual)
+    assert res.status_code == 503
+    assert client.get("/crm/incidents").get_data(as_text=True).count(">INC-") == 1
+
+
+def test_retry_after_lost_response_gets_same_number(client):
+    # 저장은 됐지만 응답을 못 받은 UiPath가 같은 request_id로 다시 접수하는 경우
+    first = client.post("/crm/incidents", data=VALID).headers["Location"]
+    retry = client.post("/crm/incidents", data=VALID, follow_redirects=True)
+    html = retry.get_data(as_text=True)
+    assert first.rsplit("/", 1)[1] in html
+    assert 'id="duplicate-notice"' in html

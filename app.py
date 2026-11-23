@@ -37,6 +37,20 @@ def rate_limit_exceeded(error):
     }), 429
 
 
+@app.errorhandler(sqlite3.Error)
+def database_error(error):
+    # 트랜잭션은 커밋 전이면 통째로 취소되므로 반쯤 저장된 데이터는 남지 않는다.
+    app.logger.exception("DB 오류")
+    if "no such table" in str(error):
+        message = "DB가 초기화되지 않았습니다. python database/seed.py를 실행해 주세요."
+    else:
+        message = "일시적인 DB 오류입니다. 같은 요청 ID로 다시 시도해 주세요."
+
+    if request.path.startswith("/crm"):
+        return render_template("crm/error.html", message=message), 503
+    return jsonify({"error": message}), 503
+
+
 # ==========================================
 # Database
 # ==========================================
@@ -237,7 +251,7 @@ def crm_incident_create():
     finally:
         conn.close()
 
-    return fail("접수 중 충돌이 반복되었습니다. 다시 시도해 주세요.")
+    raise sqlite3.OperationalError("incident insert conflicted 3 times")
 
 
 INCIDENT_SELECT = """
