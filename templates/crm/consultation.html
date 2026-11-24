@@ -1,0 +1,139 @@
+{% extends "crm/base.html" %}
+{% block title %}상담 입력{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>상담 입력</h2>
+  <p class="hint">고객 문의를 입력하고 AI 분석을 받은 뒤, 내용을 확인하고 승인하면 사고로 접수됩니다.</p>
+
+  <label for="customer_id">고객 ID</label>
+  <input id="customer_id" name="customer_id" placeholder="C001">
+
+  <label for="conversation">상담 내용</label>
+  <textarea id="conversation" maxlength="10000" placeholder="고객이 말한 내용을 입력하세요."></textarea>
+
+  <p id="analyze-error" class="error hidden"></p>
+
+  <button id="analyze-btn" type="button">AI 분석 요청</button>
+</div>
+
+<div id="result-card" class="card hidden" style="margin-top: 16px;">
+  <h2>AI 분석 결과</h2>
+  <table>
+    <tr><th>상담 유형</th><td>
+      <select id="result-category">
+        {% for code, label in categories.items() %}
+        <option value="{{ code }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </td></tr>
+    <tr><th>요약</th><td><textarea id="result-summary" maxlength="2000"></textarea></td></tr>
+    <tr><th>상담원 추천 답변</th><td><textarea id="result-reply" readonly></textarea></td></tr>
+    <tr><th>추천 조치</th><td id="result-action"></td></tr>
+    <tr><th>상담원 검토 필요</th><td id="result-review"></td></tr>
+    <tr><th>위험도</th><td>
+      <select id="result-risk">
+        <option value="">없음</option>
+        {% for code, label in risk_levels.items() %}
+        <option value="{{ code }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+      <span id="result-risk-reasons" class="hint"></span>
+    </td></tr>
+  </table>
+
+  <p class="hint">위 내용을 확인·수정한 뒤 승인하면 사고로 접수되고 처리 상태 화면으로 이동합니다.</p>
+  <form id="approve-form" method="post" action="{{ url_for('crm_incident_create') }}">
+    <input type="hidden" name="customer_id" id="approve-customer-id">
+    <input type="hidden" name="category" id="approve-category">
+    <input type="hidden" name="summary" id="approve-summary">
+    <input type="hidden" name="risk_level" id="approve-risk-level">
+    <div class="actions-row">
+      <button id="approve-btn" type="submit">승인하고 접수</button>
+    </div>
+  </form>
+</div>
+
+<script>
+const ACTION_LABELS = {{ actions | tojson }};
+const RISK_BADGE_CLASS = { LOW: "badge-low", MEDIUM: "badge-medium", HIGH: "badge-high" };
+
+const analyzeBtn = document.getElementById("analyze-btn");
+const errorEl = document.getElementById("analyze-error");
+const resultCard = document.getElementById("result-card");
+
+function showError(message) {
+  errorEl.textContent = message;
+  errorEl.classList.remove("hidden");
+}
+
+analyzeBtn.addEventListener("click", async () => {
+  const customerId = document.getElementById("customer_id").value.trim();
+  const conversation = document.getElementById("conversation").value.trim();
+
+  errorEl.classList.add("hidden");
+  resultCard.classList.add("hidden");
+
+  if (!conversation) {
+    showError("상담 내용을 입력해 주세요.");
+    return;
+  }
+
+  analyzeBtn.disabled = true;
+  analyzeBtn.textContent = "분석 중...";
+
+  try {
+    const [aiResponse, fdsResponse] = await Promise.all([
+      fetch("/api/ai/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversation }),
+      }),
+      customerId ? fetch(`/api/fds/customers/${encodeURIComponent(customerId)}`) : null,
+    ]);
+    const ai = await aiResponse.json();
+    if (!aiResponse.ok) throw new Error(ai.error || "AI 분석에 실패했습니다.");
+
+    let risk = { risk_level: "", reasons: [] };
+    if (fdsResponse && fdsResponse.ok) risk = await fdsResponse.json();
+
+    document.getElementById("result-category").value = ai.category;
+    document.getElementById("result-summary").value = ai.summary;
+    document.getElementById("result-reply").value = ai.suggested_reply;
+    document.getElementById("result-action").textContent =
+      ACTION_LABELS[ai.recommended_action] || ai.recommended_action;
+    document.getElementById("result-review").textContent = ai.requires_human_review ? "필요" : "불필요";
+
+    const riskSelect = document.getElementById("result-risk");
+    riskSelect.value = risk.risk_level || "";
+    document.getElementById("result-risk-reasons").textContent =
+      risk.reasons && risk.reasons.length ? "(" + risk.reasons.join(", ") + ")" : "";
+
+    document.getElementById("approve-customer-id").value = customerId;
+    resultCard.classList.remove("hidden");
+  } catch (err) {
+    showError(err.message || "AI 분석 중 오류가 발생했습니다.");
+  } finally {
+    analyzeBtn.disabled = false;
+    analyzeBtn.textContent = "AI 분석 요청";
+  }
+});
+
+let approving = false;
+
+document.getElementById("approve-form").addEventListener("submit", (event) => {
+  // 승인 버튼을 여러 번 눌러도 사고가 한 번만 접수되도록 막는다.
+  if (approving) {
+    event.preventDefault();
+    return;
+  }
+  approving = true;
+  const approveBtn = document.getElementById("approve-btn");
+  approveBtn.disabled = true;
+  approveBtn.textContent = "접수 중...";
+
+  document.getElementById("approve-category").value = document.getElementById("result-category").value;
+  document.getElementById("approve-summary").value = document.getElementById("result-summary").value;
+  document.getElementById("approve-risk-level").value = document.getElementById("result-risk").value;
+});
+</script>
+{% endblock %}

@@ -179,3 +179,23 @@ def test_retry_after_lost_response_gets_same_number(client):
     html = retry.get_data(as_text=True)
     assert first.rsplit("/", 1)[1] in html
     assert 'id="duplicate-notice"' in html
+
+
+def test_consultation_page_has_required_fields(client):
+    html = client.get("/consultation").get_data(as_text=True)
+    for element_id in ("customer_id", "conversation", "analyze-btn",
+                       "result-category", "result-summary", "result-risk", "approve-btn"):
+        assert f'id="{element_id}"' in html
+
+
+def test_fds_customer_risk_endpoint(client):
+    res = client.get("/api/fds/customers/C001")
+    assert res.status_code == 200
+    assert res.json["risk_level"] in ("LOW", "MEDIUM", "HIGH")
+
+
+def test_fds_customer_risk_unknown_customer_is_low(client):
+    res = client.get("/api/fds/customers/NOPE")
+    assert res.status_code == 200
+    assert res.json == {"transaction_id": None, "risk_score": 0,
+                         "risk_level": "LOW", "reasons": []}
