@@ -67,7 +67,8 @@
     <Sequence.Variables>
       <Variable x:TypeArguments="x:Boolean" Name="historyExists" />
       <Variable x:TypeArguments="x:String" Name="historyDir" />
-      <Variable x:TypeArguments="x:String" Name="historyText" />
+      <Variable x:TypeArguments="x:String" Name="bakPath" />
+      <Variable x:TypeArguments="x:String" Name="tmpPath" />
       <Variable x:TypeArguments="jn:JObject" Name="history" />
     </Sequence.Variables>
     <Assign DisplayName="이력 폴더 경로" sap2010:WorkflowViewState.IdRef="Assign_1">
@@ -75,31 +76,34 @@
       <Assign.Value><InArgument x:TypeArguments="x:String">[System.IO.Path.GetDirectoryName(in_HistoryPath)]</InArgument></Assign.Value>
     </Assign>
     <ui:CreateDirectory DisplayName="이력 폴더 생성" Path="[historyDir]" sap2010:WorkflowViewState.IdRef="CreateDirectory_1" />
-    <ui:PathExists DisplayName="history.json 존재 확인" Path="[in_HistoryPath]" PathType="File" Exists="[historyExists]" sap2010:WorkflowViewState.IdRef="PathExists_1" />
-    <If DisplayName="이력 파일이 있으면 읽고, 없으면 새로 만든다" sap2010:WorkflowViewState.IdRef="If_1">
-      <If.Condition><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="historyExists" /></InArgument></If.Condition>
-      <If.Then>
-        <Sequence DisplayName="Then" sap2010:WorkflowViewState.IdRef="Sequence_2">
-          <ui:ReadTextFile DisplayName="history.json 읽기" FileName="[in_HistoryPath]" Content="[historyText]" sap2010:WorkflowViewState.IdRef="ReadTextFile_1" />
-          <Assign DisplayName="이력 파싱" sap2010:WorkflowViewState.IdRef="Assign_2">
-            <Assign.To><OutArgument x:TypeArguments="jn:JObject">[history]</OutArgument></Assign.To>
-            <Assign.Value><InArgument x:TypeArguments="jn:JObject">[Newtonsoft.Json.Linq.JObject.Parse(historyText)]</InArgument></Assign.Value>
-          </Assign>
-        </Sequence>
-      </If.Then>
-      <If.Else>
-        <Sequence DisplayName="Else" sap2010:WorkflowViewState.IdRef="Sequence_3">
-          <Assign DisplayName="빈 이력 생성" sap2010:WorkflowViewState.IdRef="Assign_3">
-            <Assign.To><OutArgument x:TypeArguments="jn:JObject">[history]</OutArgument></Assign.To>
-            <Assign.Value><InArgument x:TypeArguments="jn:JObject">[New Newtonsoft.Json.Linq.JObject()]</InArgument></Assign.Value>
-          </Assign>
-        </Sequence>
-      </If.Else>
-    </If>
+    <ui:InvokeWorkflowFile DisplayName="LoadHistory 실행" WorkflowFileName="Workflows\LoadHistory.xaml" sap2010:WorkflowViewState.IdRef="InvokeWorkflowFile_1">
+      <ui:InvokeWorkflowFile.Arguments>
+        <InArgument x:TypeArguments="x:String" x:Key="in_HistoryPath">[in_HistoryPath]</InArgument>
+        <OutArgument x:TypeArguments="jn:JObject" x:Key="out_History">[history]</OutArgument>
+      </ui:InvokeWorkflowFile.Arguments>
+    </ui:InvokeWorkflowFile>
     <Assign DisplayName="request_id 기록 추가" sap2010:WorkflowViewState.IdRef="Assign_4">
       <Assign.To><OutArgument x:TypeArguments="jn:JToken">[history(in_RequestId)]</OutArgument></Assign.To>
       <Assign.Value><InArgument x:TypeArguments="jn:JToken">[New Newtonsoft.Json.Linq.JObject(New Newtonsoft.Json.Linq.JProperty("incident_no", in_IncidentNo), New Newtonsoft.Json.Linq.JProperty("processed_at", DateTime.Now.ToString("yyyy-MM-dd'T'HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture)))]</InArgument></Assign.Value>
     </Assign>
-    <ui:WriteTextFile DisplayName="history.json 쓰기" FileName="[in_HistoryPath]" Text="[history.ToString()]" sap2010:WorkflowViewState.IdRef="WriteTextFile_1" />
+    <Assign DisplayName="백업 경로" sap2010:WorkflowViewState.IdRef="Assign_5">
+      <Assign.To><OutArgument x:TypeArguments="x:String">[bakPath]</OutArgument></Assign.To>
+      <Assign.Value><InArgument x:TypeArguments="x:String">[in_HistoryPath &amp; ".bak"]</InArgument></Assign.Value>
+    </Assign>
+    <Assign DisplayName="임시 파일 경로" sap2010:WorkflowViewState.IdRef="Assign_6">
+      <Assign.To><OutArgument x:TypeArguments="x:String">[tmpPath]</OutArgument></Assign.To>
+      <Assign.Value><InArgument x:TypeArguments="x:String">[in_HistoryPath &amp; ".tmp"]</InArgument></Assign.Value>
+    </Assign>
+    <ui:PathExists DisplayName="history.json 존재 확인" Path="[in_HistoryPath]" PathType="File" Exists="[historyExists]" sap2010:WorkflowViewState.IdRef="PathExists_1" />
+    <If DisplayName="직전 정상본을 .bak 으로 보관" sap2010:WorkflowViewState.IdRef="If_1">
+      <If.Condition><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="historyExists" /></InArgument></If.Condition>
+      <If.Then>
+        <Sequence DisplayName="Then" sap2010:WorkflowViewState.IdRef="Sequence_2">
+          <ui:CopyFile DisplayName="history.json 을 .bak 으로 복사" Path="[in_HistoryPath]" Destination="[bakPath]" Overwrite="True" sap2010:WorkflowViewState.IdRef="CopyFile_1" />
+        </Sequence>
+      </If.Then>
+    </If>
+    <ui:WriteTextFile DisplayName="history.json.tmp 쓰기" FileName="[tmpPath]" Text="[history.ToString()]" sap2010:WorkflowViewState.IdRef="WriteTextFile_1" />
+    <ui:MoveFile DisplayName="tmp 를 history.json 으로 교체" Path="[tmpPath]" Destination="[in_HistoryPath]" Overwrite="True" sap2010:WorkflowViewState.IdRef="MoveFile_1" />
   </Sequence>
 </Activity>

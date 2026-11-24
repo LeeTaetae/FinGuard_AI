@@ -66,8 +66,6 @@
   </TextExpression.ReferencesForImplementation>
   <Sequence DisplayName="Check History" sap2010:WorkflowViewState.IdRef="Sequence_1">
     <Sequence.Variables>
-      <Variable x:TypeArguments="x:Boolean" Name="historyExists" />
-      <Variable x:TypeArguments="x:String" Name="historyText" />
       <Variable x:TypeArguments="jn:JObject" Name="history" />
     </Sequence.Variables>
     <ui:MultipleAssign DisplayName="출력 초기화" sap2010:WorkflowViewState.IdRef="MultipleAssign_1">
@@ -84,16 +82,13 @@
         </scg:List>
       </ui:MultipleAssign.AssignOperations>
     </ui:MultipleAssign>
-    <ui:PathExists DisplayName="history.json 존재 확인" Path="[in_HistoryPath]" PathType="File" Exists="[historyExists]" sap2010:WorkflowViewState.IdRef="PathExists_1" />
-    <If DisplayName="이력 파일이 있으면" sap2010:WorkflowViewState.IdRef="If_1">
-      <If.Condition><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="historyExists" /></InArgument></If.Condition>
-      <If.Then>
-        <Sequence DisplayName="Then" sap2010:WorkflowViewState.IdRef="Sequence_2">
-          <ui:ReadTextFile DisplayName="history.json 읽기" FileName="[in_HistoryPath]" Content="[historyText]" sap2010:WorkflowViewState.IdRef="ReadTextFile_1" />
-          <Assign DisplayName="이력 파싱" sap2010:WorkflowViewState.IdRef="Assign_1">
-            <Assign.To><OutArgument x:TypeArguments="jn:JObject">[history]</OutArgument></Assign.To>
-            <Assign.Value><InArgument x:TypeArguments="jn:JObject">[Newtonsoft.Json.Linq.JObject.Parse(historyText)]</InArgument></Assign.Value>
-          </Assign>
+    <ui:InvokeWorkflowFile DisplayName="LoadHistory 실행" WorkflowFileName="Workflows\LoadHistory.xaml" sap2010:WorkflowViewState.IdRef="InvokeWorkflowFile_1">
+      <ui:InvokeWorkflowFile.Arguments>
+        <InArgument x:TypeArguments="x:String" x:Key="in_HistoryPath">[in_HistoryPath]</InArgument>
+        <OutArgument x:TypeArguments="jn:JObject" x:Key="out_History">[history]</OutArgument>
+      </ui:InvokeWorkflowFile.Arguments>
+    </ui:InvokeWorkflowFile>
+    <Sequence DisplayName="중복 확인" sap2010:WorkflowViewState.IdRef="Sequence_2">
           <If DisplayName="같은 request_id 가 있으면" sap2010:WorkflowViewState.IdRef="If_2">
             <If.Condition><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="history.Property(in_RequestId) IsNot Nothing" /></InArgument></If.Condition>
             <If.Then>
@@ -115,8 +110,6 @@
               </Sequence>
             </If.Then>
           </If>
-        </Sequence>
-      </If.Then>
-    </If>
+    </Sequence>
   </Sequence>
 </Activity>
