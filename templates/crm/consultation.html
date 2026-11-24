@@ -82,19 +82,19 @@ analyzeBtn.addEventListener("click", async () => {
   analyzeBtn.textContent = "분석 중...";
 
   try {
-    const aiResponse = await fetch("/api/ai/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ conversation }),
-    });
+    const [aiResponse, fdsResponse] = await Promise.all([
+      fetch("/api/ai/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversation }),
+      }),
+      customerId ? fetch(`/api/fds/customers/${encodeURIComponent(customerId)}`) : null,
+    ]);
     const ai = await aiResponse.json();
     if (!aiResponse.ok) throw new Error(ai.error || "AI 분석에 실패했습니다.");
 
     let risk = { risk_level: "", reasons: [] };
-    if (customerId) {
-      const fdsResponse = await fetch(`/api/fds/customers/${encodeURIComponent(customerId)}`);
-      if (fdsResponse.ok) risk = await fdsResponse.json();
-    }
+    if (fdsResponse && fdsResponse.ok) risk = await fdsResponse.json();
 
     document.getElementById("result-category").value = ai.category;
     document.getElementById("result-summary").value = ai.summary;
