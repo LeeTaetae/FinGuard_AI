@@ -9,6 +9,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 from ai.consultation_analyzer import Category, analyze_consultation
+from fds import analyze_customer
 
 
 app = Flask(__name__)
@@ -188,6 +189,29 @@ CATEGORY_LABELS = {
 }
 RISK_LEVELS = {"LOW": "낮음", "MEDIUM": "보통", "HIGH": "높음"}
 STATUS_LABELS = {"RECEIVED": "접수", "IN_PROGRESS": "처리중", "DONE": "처리완료"}
+ACTION_LABELS = {
+    "VERIFY_CUSTOMER": "본인 확인 필요",
+    "VERIFY_AND_ESCALATE": "본인 확인 후 담당 부서 이관",
+    "PROVIDE_INFORMATION": "정보 안내",
+    "ESCALATE_TO_AGENT": "상담원 직접 처리",
+}
+
+
+# ==========================================
+# 상담원 화면 - 상담 입력 → AI 결과 → 위험 분석 → 승인
+# ==========================================
+
+@app.get("/consultation")
+def consultation_form():
+    return render_template(
+        "crm/consultation.html",
+        categories=CATEGORY_LABELS, risk_levels=RISK_LEVELS, actions=ACTION_LABELS,
+    )
+
+
+@app.get("/api/fds/customers/<customer_id>")
+def fds_customer_risk(customer_id):
+    return jsonify(analyze_customer(customer_id, db_path=DB_PATH))
 
 
 @app.get("/crm/incidents/new")
