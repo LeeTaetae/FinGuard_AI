@@ -157,7 +157,7 @@
           </ui:MultipleAssign>
           <Assign DisplayName="누락 필드 확인" sap2010:WorkflowViewState.IdRef="Assign_3">
             <Assign.To><OutArgument x:TypeArguments="x:String">[missingFields]</OutArgument></Assign.To>
-            <Assign.Value><InArgument x:TypeArguments="x:String">[String.Join(", ", New String() {If(requestId = "", "request_id", ""), If(customerId = "", "customer_id", ""), If(category = "", "category", ""), If(summary = "", "summary", "")}.Where(Function(f) f &lt;&gt; ""))]</InArgument></Assign.Value>
+            <Assign.Value><InArgument x:TypeArguments="x:String">[String.Join(", ", New String() {If(requestId = "", "request_id", ""), If(customerId = "", "customer_id", ""), If(category = "", "category", ""), If(summary = "", "summary", ""), If(request.Property("approved") Is Nothing, "approved", "")}.Where(Function(f) f &lt;&gt; ""))]</InArgument></Assign.Value>
           </Assign>
           <If DisplayName="필수 필드가 비어 있으면 실패" sap2010:WorkflowViewState.IdRef="If_1">
             <If.Condition><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="missingFields &lt;&gt; &quot;&quot;" /></InArgument></If.Condition>
