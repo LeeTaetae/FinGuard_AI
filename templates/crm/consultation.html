@@ -118,7 +118,19 @@ analyzeBtn.addEventListener("click", async () => {
   }
 });
 
-document.getElementById("approve-form").addEventListener("submit", () => {
+let approving = false;
+
+document.getElementById("approve-form").addEventListener("submit", (event) => {
+  // 승인 버튼을 여러 번 눌러도 사고가 한 번만 접수되도록 막는다.
+  if (approving) {
+    event.preventDefault();
+    return;
+  }
+  approving = true;
+  const approveBtn = document.getElementById("approve-btn");
+  approveBtn.disabled = true;
+  approveBtn.textContent = "접수 중...";
+
   document.getElementById("approve-category").value = document.getElementById("result-category").value;
   document.getElementById("approve-summary").value = document.getElementById("result-summary").value;
   document.getElementById("approve-risk-level").value = document.getElementById("result-risk").value;
