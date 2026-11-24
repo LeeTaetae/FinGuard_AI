@@ -26,3 +26,4 @@ venv/
 
 # UiPath (생성물)
 uipath/.local/
+.uipath/

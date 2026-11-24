@@ -9,6 +9,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 from ai.consultation_analyzer import Category, analyze_consultation
+from ai.uipath_client import UiPathLLMError
 from fds import analyze_customer
 
 
@@ -168,12 +169,18 @@ def analyze_ai():
 
         return jsonify(result), 200
 
-    except Exception:
-        app.logger.exception("AI 상담 분석 실패")
+    except UiPathLLMError as exc:
+        app.logger.warning("AI 상담 분석 실패: %s", exc)
+        error = str(exc)
+    except Exception as exc:
+        app.logger.error("AI 상담 분석 실패: %s", type(exc).__name__)
+        error = "AI 상담 분석 중 오류가 발생했습니다."
 
-        return jsonify({
-            "error": "AI 상담 분석 중 오류가 발생했습니다."
-        }), 502
+    return jsonify({
+        "error": f"{error} 상담원 검토가 필요합니다.",
+        "recommended_action": "ESCALATE_TO_AGENT",
+        "requires_human_review": True,
+    }), 502
 
 
 # ==========================================

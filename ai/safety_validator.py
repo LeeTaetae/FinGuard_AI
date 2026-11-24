@@ -7,6 +7,10 @@ import re
 # ==========================================
 
 UNSAFE_PATTERNS = [
+    # 실행하지 않은 조치를 완료했다고 주장하거나 결과를 약속
+    r"(?:거래|결제).{0,20}취소.{0,6}(?:완료|처리\s*(?:했|됐|되었|됩니다|하겠)|했|하였|됐|되었|됩니다|하겠|해\s*드[리릴]|할\s*것|보장)",
+    r"카드.{0,20}(?:정지|차단).{0,6}(?:완료|처리\s*(?:했|됐|되었|됩니다|하겠)|했|하였|됐|되었|됩니다|하겠|해\s*드[리릴]|될\s*것|보장)",
+    r"(?:연락|전화|문자\s*발송)(?:을|를|이|가)?\s*(?:완료|드렸|드리겠|했|하였|됐|되었|하겠|드립니다|갑니다|해\s*드[리릴]|할\s*것|보장)",
     # 실제 조회하지 않은 거래를 확인했다고 주장
     r"거래.{0,15}확인(?:했|하였|되었|됐)습니다",
     r"거래.{0,15}조회(?:했|하였|되었|됐)습니다",
@@ -112,7 +116,7 @@ def detect_unsafe_reply(reply: str) -> bool:
 
 def validate_safety(result: dict) -> dict:
     """
-    ChatGPT 상담 분석 결과를 검사합니다.
+    LLM 상담 분석 결과를 검사합니다.
 
     1. 카드 분실 및 미승인 거래는 사람 검토 강제
     2. 위험 표현 탐지
@@ -151,6 +155,11 @@ def validate_safety(result: dict) -> dict:
     # ======================================
     # 위험 표현 검사
     # ======================================
+
+    summary = validated_result.get("summary")
+    if summary and detect_unsafe_reply(summary):
+        validated_result["summary"] = "상담 내용과 후속 조치는 담당 상담원의 확인이 필요합니다."
+        validated_result["requires_human_review"] = True
 
     unsafe = detect_unsafe_reply(reply)
 
