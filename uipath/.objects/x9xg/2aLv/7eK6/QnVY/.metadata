@@ -1,0 +1,15 @@
+﻿{
+  "Name": "Form Error Text",
+  "Description": "Error message shown above the incident form when CRM rejects the submission",
+  "Type": "Element",
+  "TaxonomyType": "Label",
+  "Id": "QnVYas5ZNEmRMR8uRt7-6Q",
+  "Reference": "F9ggLvmvHkGBkDPI03Dc3Q/QnVYas5ZNEmRMR8uRt7-6Q",
+  "ParentRef": "F9ggLvmvHkGBkDPI03Dc3Q/7eK6o1lcVUCihT8OEU4tFA",
+  "Created": "2026-11-23T06:57:22.1345463Z",
+  "Updated": "2026-11-23T06:57:22.1345463Z",
+  "CreatedBy": [
+    "UiPath.UIAutomationCore, Version=26.10.7.0, Culture=neutral, PublicKeyToken=null",
+    "UiPath.Platform, Version=26.4.0.0, Culture=neutral, PublicKeyToken=null"
+  ]
+}

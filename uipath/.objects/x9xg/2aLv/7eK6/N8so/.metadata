@@ -1,0 +1,15 @@
+﻿{
+  "Name": "Category Dropdown",
+  "Description": "Dropdown for the incident category, in the incident form",
+  "Type": "Element",
+  "TaxonomyType": "Dropdown",
+  "Id": "N8soAHC12ESVZFvVai27Ow",
+  "Reference": "F9ggLvmvHkGBkDPI03Dc3Q/N8soAHC12ESVZFvVai27Ow",
+  "ParentRef": "F9ggLvmvHkGBkDPI03Dc3Q/7eK6o1lcVUCihT8OEU4tFA",
+  "Created": "2026-11-23T06:24:22.1481993Z",
+  "Updated": "2026-11-23T06:24:22.1481993Z",
+  "CreatedBy": [
+    "UiPath.UIAutomationCore, Version=26.10.7.0, Culture=neutral, PublicKeyToken=null",
+    "UiPath.Platform, Version=26.4.0.0, Culture=neutral, PublicKeyToken=null"
+  ]
+}

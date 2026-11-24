@@ -1,0 +1,169 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="Workflows_LoadHistory" VisualBasic.Settings="{x:Null}" sap2010:WorkflowViewState.IdRef="ActivityBuilder_1" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:jn="clr-namespace:Newtonsoft.Json.Linq;assembly=Newtonsoft.Json" xmlns:s="clr-namespace:System;assembly=System.Private.CoreLib" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_HistoryPath" Type="InArgument(x:String)" />
+    <x:Property Name="out_History" Type="OutArgument(jn:JObject)" />
+  </x:Members>
+  <TextExpression.NamespacesForImplementation>
+    <sco:Collection x:TypeArguments="x:String">
+      <x:String>System.Activities</x:String>
+      <x:String>System.Activities.Statements</x:String>
+      <x:String>System.Activities.Expressions</x:String>
+      <x:String>System.Activities.Validation</x:String>
+      <x:String>System.Activities.XamlIntegration</x:String>
+      <x:String>Microsoft.VisualBasic</x:String>
+      <x:String>Microsoft.VisualBasic.Activities</x:String>
+      <x:String>System</x:String>
+      <x:String>System.Collections</x:String>
+      <x:String>System.Collections.Generic</x:String>
+      <x:String>System.Collections.ObjectModel</x:String>
+      <x:String>System.Data</x:String>
+      <x:String>System.Diagnostics</x:String>
+      <x:String>System.Drawing</x:String>
+      <x:String>System.IO</x:String>
+      <x:String>System.Linq</x:String>
+      <x:String>System.Net.Mail</x:String>
+      <x:String>System.Xml</x:String>
+      <x:String>System.Xml.Linq</x:String>
+      <x:String>UiPath.Core</x:String>
+      <x:String>UiPath.Core.Activities</x:String>
+      <x:String>System.Windows.Markup</x:String>
+      <x:String>GlobalVariablesNamespace</x:String>
+      <x:String>GlobalConstantsNamespace</x:String>
+      <x:String>Newtonsoft.Json.Linq</x:String>
+    </sco:Collection>
+  </TextExpression.NamespacesForImplementation>
+  <TextExpression.ReferencesForImplementation>
+    <sco:Collection x:TypeArguments="AssemblyReference">
+      <AssemblyReference>System.Activities</AssemblyReference>
+      <AssemblyReference>Microsoft.VisualBasic</AssemblyReference>
+      <AssemblyReference>System.Private.CoreLib</AssemblyReference>
+      <AssemblyReference>mscorlib</AssemblyReference>
+      <AssemblyReference>System.Data</AssemblyReference>
+      <AssemblyReference>System</AssemblyReference>
+      <AssemblyReference>System.Linq</AssemblyReference>
+      <AssemblyReference>System.Data.Common</AssemblyReference>
+      <AssemblyReference>System.Drawing</AssemblyReference>
+      <AssemblyReference>System.Drawing.Primitives</AssemblyReference>
+      <AssemblyReference>System.Drawing.Common</AssemblyReference>
+      <AssemblyReference>System.Core</AssemblyReference>
+      <AssemblyReference>System.Xml</AssemblyReference>
+      <AssemblyReference>System.Xml.Linq</AssemblyReference>
+      <AssemblyReference>PresentationFramework</AssemblyReference>
+      <AssemblyReference>WindowsBase</AssemblyReference>
+      <AssemblyReference>PresentationCore</AssemblyReference>
+      <AssemblyReference>System.Xaml</AssemblyReference>
+      <AssemblyReference>UiPath.System.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.UiAutomation.Activities</AssemblyReference>
+      <AssemblyReference>System.Data.DataSetExtensions</AssemblyReference>
+      <AssemblyReference>System.Net.Mail</AssemblyReference>
+      <AssemblyReference>System.ObjectModel</AssemblyReference>
+      <AssemblyReference>System.ComponentModel.TypeConverter</AssemblyReference>
+      <AssemblyReference>System.Collections</AssemblyReference>
+      <AssemblyReference>Newtonsoft.Json</AssemblyReference>
+    </sco:Collection>
+  </TextExpression.ReferencesForImplementation>
+  <Sequence DisplayName="Load History" sap2010:WorkflowViewState.IdRef="Sequence_1">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:Boolean" Name="historyExists" />
+      <Variable x:TypeArguments="x:Boolean" Name="bakExists" />
+      <Variable x:TypeArguments="x:String" Name="historyText" />
+      <Variable x:TypeArguments="x:String" Name="bakText" />
+      <Variable x:TypeArguments="x:String" Name="bakPath" />
+      <Variable x:TypeArguments="x:String" Name="corruptPath" />
+    </Sequence.Variables>
+    <Assign DisplayName="백업 경로" sap2010:WorkflowViewState.IdRef="Assign_1">
+      <Assign.To><OutArgument x:TypeArguments="x:String">[bakPath]</OutArgument></Assign.To>
+      <Assign.Value><InArgument x:TypeArguments="x:String">[in_HistoryPath &amp; ".bak"]</InArgument></Assign.Value>
+    </Assign>
+    <ui:PathExists DisplayName="history.json 존재 확인" Path="[in_HistoryPath]" PathType="File" Exists="[historyExists]" sap2010:WorkflowViewState.IdRef="PathExists_1" />
+    <If DisplayName="이력 파일이 있으면 읽고, 없으면 빈 이력" sap2010:WorkflowViewState.IdRef="If_1">
+      <If.Condition><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="historyExists" /></InArgument></If.Condition>
+      <If.Then>
+        <Sequence DisplayName="Then" sap2010:WorkflowViewState.IdRef="Sequence_2">
+          <TryCatch DisplayName="history.json 파싱 (손상 시 복구)" sap2010:WorkflowViewState.IdRef="TryCatch_1">
+            <TryCatch.Try>
+              <Sequence DisplayName="Try" sap2010:WorkflowViewState.IdRef="Sequence_3">
+                <ui:ReadTextFile DisplayName="history.json 읽기" FileName="[in_HistoryPath]" Content="[historyText]" sap2010:WorkflowViewState.IdRef="ReadTextFile_1" />
+                <Assign DisplayName="이력 파싱" sap2010:WorkflowViewState.IdRef="Assign_2">
+                  <Assign.To><OutArgument x:TypeArguments="jn:JObject">[out_History]</OutArgument></Assign.To>
+                  <Assign.Value><InArgument x:TypeArguments="jn:JObject">[Newtonsoft.Json.Linq.JObject.Parse(historyText)]</InArgument></Assign.Value>
+                </Assign>
+              </Sequence>
+            </TryCatch.Try>
+            <TryCatch.Catches>
+              <Catch x:TypeArguments="s:Exception" sap2010:WorkflowViewState.IdRef="Catch`1_1">
+                <ActivityAction x:TypeArguments="s:Exception">
+                  <ActivityAction.Argument>
+                    <DelegateInArgument x:TypeArguments="s:Exception" Name="exception" />
+                  </ActivityAction.Argument>
+                  <Sequence DisplayName="Catch" sap2010:WorkflowViewState.IdRef="Sequence_4">
+                    <Assign DisplayName="격리 파일 경로" sap2010:WorkflowViewState.IdRef="Assign_3">
+                      <Assign.To><OutArgument x:TypeArguments="x:String">[corruptPath]</OutArgument></Assign.To>
+                      <Assign.Value><InArgument x:TypeArguments="x:String">[in_HistoryPath &amp; ".corrupt-" &amp; DateTime.Now.ToString("yyyyMMdd_HHmmss", System.Globalization.CultureInfo.InvariantCulture)]</InArgument></Assign.Value>
+                    </Assign>
+                    <ui:LogMessage DisplayName="손상 경고 로그" Level="Warn" Message="[&quot;history.json 파싱 실패, 격리합니다: &quot; &amp; corruptPath &amp; &quot; (&quot; &amp; exception.GetType().Name &amp; &quot;)&quot;]" sap2010:WorkflowViewState.IdRef="LogMessage_1" />
+                    <ui:MoveFile DisplayName="손상 파일 격리" Path="[in_HistoryPath]" Destination="[corruptPath]" Overwrite="True" sap2010:WorkflowViewState.IdRef="MoveFile_1" />
+                    <ui:PathExists DisplayName="백업 존재 확인" Path="[bakPath]" PathType="File" Exists="[bakExists]" sap2010:WorkflowViewState.IdRef="PathExists_2" />
+                    <Assign DisplayName="기본값: 빈 이력" sap2010:WorkflowViewState.IdRef="Assign_4">
+                      <Assign.To><OutArgument x:TypeArguments="jn:JObject">[out_History]</OutArgument></Assign.To>
+                      <Assign.Value><InArgument x:TypeArguments="jn:JObject">[New Newtonsoft.Json.Linq.JObject()]</InArgument></Assign.Value>
+                    </Assign>
+                    <If DisplayName="백업이 있으면 복원 시도" sap2010:WorkflowViewState.IdRef="If_2">
+                      <If.Condition><InArgument x:TypeArguments="x:Boolean"><VisualBasicValue x:TypeArguments="x:Boolean" ExpressionText="bakExists" /></InArgument></If.Condition>
+                      <If.Then>
+                        <Sequence DisplayName="Then" sap2010:WorkflowViewState.IdRef="Sequence_5">
+                          <TryCatch DisplayName="백업 파싱 및 복원" sap2010:WorkflowViewState.IdRef="TryCatch_2">
+                            <TryCatch.Try>
+                              <Sequence DisplayName="Try" sap2010:WorkflowViewState.IdRef="Sequence_6">
+                                <ui:ReadTextFile DisplayName="history.json.bak 읽기" FileName="[bakPath]" Content="[bakText]" sap2010:WorkflowViewState.IdRef="ReadTextFile_2" />
+                                <Assign DisplayName="백업 파싱" sap2010:WorkflowViewState.IdRef="Assign_5">
+                                  <Assign.To><OutArgument x:TypeArguments="jn:JObject">[out_History]</OutArgument></Assign.To>
+                                  <Assign.Value><InArgument x:TypeArguments="jn:JObject">[Newtonsoft.Json.Linq.JObject.Parse(bakText)]</InArgument></Assign.Value>
+                                </Assign>
+                                <ui:CopyFile DisplayName="백업을 history.json 으로 복원" Path="[bakPath]" Destination="[in_HistoryPath]" Overwrite="True" sap2010:WorkflowViewState.IdRef="CopyFile_1" />
+                                <ui:LogMessage DisplayName="복원 완료 로그" Level="Warn" Message="history.json 을 .bak 에서 복원했습니다" sap2010:WorkflowViewState.IdRef="LogMessage_2" />
+                              </Sequence>
+                            </TryCatch.Try>
+                            <TryCatch.Catches>
+                              <Catch x:TypeArguments="s:Exception" sap2010:WorkflowViewState.IdRef="Catch`1_2">
+                                <ActivityAction x:TypeArguments="s:Exception">
+                                  <ActivityAction.Argument>
+                                    <DelegateInArgument x:TypeArguments="s:Exception" Name="bakException" />
+                                  </ActivityAction.Argument>
+                                  <Sequence DisplayName="Catch" sap2010:WorkflowViewState.IdRef="Sequence_7">
+                                    <Assign DisplayName="빈 이력으로 시작" sap2010:WorkflowViewState.IdRef="Assign_6">
+                                      <Assign.To><OutArgument x:TypeArguments="jn:JObject">[out_History]</OutArgument></Assign.To>
+                                      <Assign.Value><InArgument x:TypeArguments="jn:JObject">[New Newtonsoft.Json.Linq.JObject()]</InArgument></Assign.Value>
+                                    </Assign>
+                                    <ui:LogMessage DisplayName="백업 복원 실패 로그" Level="Error" Message="[&quot;백업 복원 실패, 빈 이력으로 시작합니다. 이전 request_id 중복 방지가 사라질 수 있습니다. 격리 파일: &quot; &amp; corruptPath &amp; &quot; (&quot; &amp; bakException.GetType().Name &amp; &quot;)&quot;]" sap2010:WorkflowViewState.IdRef="LogMessage_3" />
+                                  </Sequence>
+                                </ActivityAction>
+                              </Catch>
+                            </TryCatch.Catches>
+                          </TryCatch>
+                        </Sequence>
+                      </If.Then>
+                      <If.Else>
+                        <Sequence DisplayName="Else" sap2010:WorkflowViewState.IdRef="Sequence_8">
+                          <ui:LogMessage DisplayName="백업 없음 로그" Level="Error" Message="[&quot;백업이 없어 빈 이력으로 시작합니다. 이전 request_id 중복 방지가 사라질 수 있습니다. 격리 파일: &quot; &amp; corruptPath]" sap2010:WorkflowViewState.IdRef="LogMessage_4" />
+                        </Sequence>
+                      </If.Else>
+                    </If>
+                  </Sequence>
+                </ActivityAction>
+              </Catch>
+            </TryCatch.Catches>
+          </TryCatch>
+        </Sequence>
+      </If.Then>
+      <If.Else>
+        <Sequence DisplayName="Else" sap2010:WorkflowViewState.IdRef="Sequence_9">
+          <Assign DisplayName="빈 이력 생성" sap2010:WorkflowViewState.IdRef="Assign_7">
+            <Assign.To><OutArgument x:TypeArguments="jn:JObject">[out_History]</OutArgument></Assign.To>
+            <Assign.Value><InArgument x:TypeArguments="jn:JObject">[New Newtonsoft.Json.Linq.JObject()]</InArgument></Assign.Value>
+          </Assign>
+        </Sequence>
+      </If.Else>
+    </If>
+  </Sequence>
+</Activity>

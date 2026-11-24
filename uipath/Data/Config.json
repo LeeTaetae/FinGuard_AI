@@ -1,0 +1,8 @@
+{
+  "RequestPath": "C:\\finguard\\request.json",
+  "ResultPath": "C:\\finguard\\result.json",
+  "HistoryPath": "C:\\finguard\\history.json",
+  "ScreenshotDir": "C:\\finguard\\screenshots",
+  "CrmBaseUrl": "http://127.0.0.1:5000",
+  "TimeoutSeconds": 30
+}

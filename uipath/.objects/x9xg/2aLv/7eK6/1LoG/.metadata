@@ -1,0 +1,15 @@
+﻿{
+  "Name": "Incident No Text",
+  "Description": "Text showing the issued incident number (INC-...), next to the incident-completed label on the result page",
+  "Type": "Element",
+  "TaxonomyType": "Label",
+  "Id": "1LoGMQ_cik-lK1_UGnS7EA",
+  "Reference": "F9ggLvmvHkGBkDPI03Dc3Q/1LoGMQ_cik-lK1_UGnS7EA",
+  "ParentRef": "F9ggLvmvHkGBkDPI03Dc3Q/7eK6o1lcVUCihT8OEU4tFA",
+  "Created": "2026-11-23T06:25:16.797491Z",
+  "Updated": "2026-11-23T06:25:16.797491Z",
+  "CreatedBy": [
+    "UiPath.UIAutomationCore, Version=26.10.7.0, Culture=neutral, PublicKeyToken=null",
+    "UiPath.Platform, Version=26.4.0.0, Culture=neutral, PublicKeyToken=null"
+  ]
+}
