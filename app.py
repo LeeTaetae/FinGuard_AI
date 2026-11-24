@@ -41,14 +41,18 @@ def rate_limit_exceeded(error):
 def database_error(error):
     # 트랜잭션은 커밋 전이면 통째로 취소되므로 반쯤 저장된 데이터는 남지 않는다.
     app.logger.exception("DB 오류")
-    if "no such table" in str(error):
-        message = "DB가 초기화되지 않았습니다. python database/seed.py를 실행해 주세요."
+    # 테이블·컬럼이 없는 구조 문제는 재시도해도 해결되지 않으므로 별도 ID로 구분한다.
+    if any(text in str(error) for text in ("no such table", "no such column")):
+        message = ("DB가 초기화되지 않았거나 구조가 최신이 아닙니다. "
+                   "database/finguard.db를 지우고 python database/seed.py를 실행해 주세요.")
+        error_id, status = "crm-setup-error", 500
     else:
         message = "일시적인 DB 오류입니다. 같은 요청 ID로 다시 시도해 주세요."
+        error_id, status = "crm-error", 503
 
     if request.path.startswith("/crm"):
-        return render_template("crm/error.html", message=message), 503
-    return jsonify({"error": message}), 503
+        return render_template("crm/error.html", message=message, error_id=error_id), status
+    return jsonify({"error": message, "retryable": status == 503}), status
 
 
 # ==========================================

@@ -3,6 +3,6 @@
 {% block content %}
 <div class="card">
   <h2>처리하지 못했습니다</h2>
-  <p id="crm-error" class="error">{{ message }}</p>
+  <p id="{{ error_id }}" class="error">{{ message }}</p>
 </div>
 {% endblock %}
