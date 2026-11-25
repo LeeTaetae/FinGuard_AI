@@ -168,19 +168,39 @@ SQLite에서 승인·Job·로봇 접수 감사 이력이 연결되고 같은 요
 ### 로컬 시작
 
 기존 DB에 마이그레이션이 필요하면 저장소 루트에서 `python -m database.migrate`를
-실행합니다. 같은 PowerShell의 환경 또는 Git에서 제외된 프로젝트 `.env`에 Gateway,
-Orchestrator, Flask 세션 키와 로봇 토큰 설정을 준비합니다. Flow 실행에 사용할
-`FINGUARD_CRM_BASE_URL`은 로봇의 실행 환경에 설정합니다.
+실행합니다. 시작 스크립트는 스크립트 위치를 기준으로 CRM 디렉터리를 선택하고
+Conda의 `uipath-test` 환경에서 실행합니다. 환경 이름이 다르면 `-CondaEnv <이름>`으로
+지정하고, 별도 Python을 쓰는 경우 `-Python 'C:\path\to\python.exe'`를 지정합니다.
+
+Gateway 인증은 CRM 디렉터리의 `.env`에 유지합니다. 기존 `FINGUARD_SECRET_KEY`,
+`FINGUARD_ROBOT_TOKEN`, `FINGUARD_ORCHESTRATOR_URL` 및 Orchestrator Client ID·Secret 또는
+토큰은 한 번만 `.env.local`에 저장합니다. 기존 셸 값은 파일보다 우선합니다.
+로봇 토큰이 셸과 파일에 없으면 현재 Windows 사용자의 User 환경변수를 조회합니다.
+두 dotenv 파일은 Git에서 제외된 평문 파일이므로 로그인 계정만 접근할 수 있는
+프로젝트 디렉터리에 두고 공유하지 않습니다. `FINGUARD_CRM_BASE_URL`은 로봇의 실행
+환경에 설정합니다.
+
+기존 값이 이미 PowerShell에 설정되어 있다면 그 셸에서
+`.\start.ps1 -SaveLocalConfig`를 한 번 실행해 지원되는 FinGuard 설정을 `.env.local`에
+저장할 수 있습니다. 이 모드는 서버를 시작하지 않으며 Gateway 자격 증명은 복사하지 않습니다.
+
+JWT 만료가 확인된 경우에만 일반 시작에서 UiPath 브라우저 재인증을 엽니다. 성공하면
+갱신된 Gateway 인증 정보를 프로젝트 `.env`에 저장합니다. 기존 Flask 세션 키와 로봇
+토큰을 새로 생성하지 않습니다. 셸에 이전 Gateway 토큰을 별도로 설정해 뒀다면 제거하고,
+최초 인증이나 만료 여부를 판독할 수 없는 토큰의 인증 실패에는 `uipath auth --force`를 사용합니다.
 
 ```powershell
 .\start.ps1 -CheckOnly
 .\start.ps1
+.\stop.ps1
 ```
 
-`-CheckOnly`는 설정만 검증합니다. Conda 등에서 다른 Python을 선택하려면
-`-Python 'C:\path\to\python.exe'`를 넘깁니다. 일반 시작은 시스템 전역 뮤텍스로
-동시 실행을 막고 5000 포트가 열려 있으면 기존 서버를 유지한 채 종료합니다. 검증
-오류는 변수 이름과 원인만 표시합니다. 서버는 루프백에서 포그라운드로 실행됩니다.
+`start.bat`과 `stop.bat`은 더블클릭으로 실행할 수 있습니다. `-CheckOnly`는 현재
+설정만 검증합니다. 일반 시작은 실행 잠금과 Windows 루프백 포트의 배타적 바인딩을
+사용해 중복 실행을 막습니다. 이미 5000 포트를 사용하는 서버는 계속 실행됩니다.
+검증 오류는 변수 이름과 원인만 표시합니다. `/health`가 정상 응답하면 브라우저에
+로그인 화면을 엽니다. `-NoBrowser`로 자동 접속을 끌 수 있습니다. 종료 스크립트는
+이 시작 스크립트로 실행한 인스턴스에 정상 종료를 요청합니다.
 
 CRM에서 테스트 상담을 등록·분석하고 승인자가 검토합니다. 실행이 허용된 승인 요청에서
 **자동화 실행**을 한 번 누른 뒤 **Job 상태 조회**로 성공과 접수번호를 대조합니다.
