@@ -1,0 +1,23 @@
+{% extends "crm/base.html" %}
+{% block title %}{{ "자동화 실행" if show_executions else "승인 대기" }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>{{ "자동화 실행" if show_executions else "승인 대기" }}</h2>
+  {% if can_dispatch %}<p><a href="{{ url_for('consultation_executions') }}">승인된 요청 및 Job 이력</a></p>{% endif %}
+  {% if show_executions %}<p><a href="{{ url_for('consultation_review') }}">승인 대기 요청</a></p>{% endif %}
+  {% if pending %}
+  <table>
+    <thead><tr><th>요청 ID</th><th>고객 ID</th><th>요청자</th><th>등록 시각 (UTC)</th><th>검토</th></tr></thead>
+    <tbody>
+      {% for item in pending %}
+      <tr>
+        <td><a href="{{ url_for('consultation_form', request_id=item.request_id) }}">{{ item.request_id }}</a></td>
+        <td>{{ item.customer_id }}</td><td>{{ item.created_by }}</td><td>{{ item.created_at }}</td>
+        <td>{{ ("상담원 확인 필요" if item.review_required else "승인 대기") if item.status == "PENDING_APPROVAL" else item.status }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p>{{ "표시할 실행 요청이 없습니다." if show_executions else "승인 대기 요청이 없습니다." }}</p>{% endif %}
+</div>
+{% endblock %}

@@ -1,4 +1,12 @@
 <Activity mc:Ignorable="sap sap2010" x:Class="Main" VisualBasic.Settings="{x:Null}" sap2010:WorkflowViewState.IdRef="ActivityBuilder_1" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:jn="clr-namespace:Newtonsoft.Json.Linq;assembly=Newtonsoft.Json" xmlns:s="clr-namespace:System;assembly=System.Private.CoreLib" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:uix="http://schemas.uipath.com/workflow/activities/uix" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_RequestId" Type="InArgument(x:String)" />
+    <x:Property Name="in_DispatchId" Type="InArgument(x:String)" />
+    <x:Property Name="out_RequestId" Type="OutArgument(x:String)" />
+    <x:Property Name="out_IncidentId" Type="OutArgument(x:String)" />
+    <x:Property Name="out_Status" Type="OutArgument(x:String)" />
+    <x:Property Name="out_Error" Type="OutArgument(x:String)" />
+  </x:Members>
   <TextExpression.NamespacesForImplementation>
     <sco:Collection x:TypeArguments="x:String">
       <x:String>System.Activities</x:String>
@@ -52,6 +60,7 @@
       <AssemblyReference>UiPath.UiAutomation.Activities</AssemblyReference>
       <AssemblyReference>System.Data.DataSetExtensions</AssemblyReference>
       <AssemblyReference>System.Net.Mail</AssemblyReference>
+      <AssemblyReference>System.Net.Http</AssemblyReference>
       <AssemblyReference>System.ObjectModel</AssemblyReference>
       <AssemblyReference>System.ComponentModel.TypeConverter</AssemblyReference>
       <AssemblyReference>System.Collections</AssemblyReference>
@@ -85,6 +94,33 @@
       <Variable x:TypeArguments="x:String" Name="submittedNo" />
       <Variable x:TypeArguments="x:String" Name="submittedError" />
     </Sequence.Variables>
+    <If DisplayName="Orchestrator 또는 로컬 실행" Condition="[Not String.IsNullOrEmpty(in_RequestId) OrElse Not String.IsNullOrEmpty(in_DispatchId)]">
+      <If.Then>
+        <Sequence DisplayName="Orchestrator Job">
+          <Sequence.Variables>
+            <Variable x:TypeArguments="x:String" Name="configScopes" />
+          </Sequence.Variables>
+          <Assign DisplayName="요청 ID 기록">
+            <Assign.To><OutArgument x:TypeArguments="x:String">[requestId]</OutArgument></Assign.To>
+            <Assign.Value><InArgument x:TypeArguments="x:String">[in_RequestId]</InArgument></Assign.Value>
+          </Assign>
+          <ui:InvokeCode DisplayName="승인 스냅샷 CRM 접수" Language="VBNet" Code="receipt = String.Empty&#xA;result = &quot;FAILED&quot;&#xA;configScopes = &quot;Token=Unread CrmUrl=Unread&quot;&#xA;failure = &quot;ROBOT_REQUEST_ID_MISSING&quot;&#xA;If String.IsNullOrWhiteSpace(requestId) Then Return&#xA;failure = &quot;ROBOT_DISPATCH_ID_MISSING&quot;&#xA;If String.IsNullOrWhiteSpace(dispatchId) Then Return&#xA;Dim tokenScope As String = &quot;Process&quot;&#xA;Dim token As String = Environment.GetEnvironmentVariable(&quot;FINGUARD_ROBOT_TOKEN&quot;, EnvironmentVariableTarget.Process)&#xA;If String.IsNullOrWhiteSpace(token) Then&#xA;    tokenScope = &quot;User&quot;&#xA;    token = Environment.GetEnvironmentVariable(&quot;FINGUARD_ROBOT_TOKEN&quot;, EnvironmentVariableTarget.User)&#xA;End If&#xA;If String.IsNullOrWhiteSpace(token) Then tokenScope = &quot;Missing&quot;&#xA;Dim urlScope As String = &quot;Process&quot;&#xA;Dim baseUrl As String = Environment.GetEnvironmentVariable(&quot;FINGUARD_CRM_BASE_URL&quot;, EnvironmentVariableTarget.Process)&#xA;If String.IsNullOrWhiteSpace(baseUrl) Then&#xA;    urlScope = &quot;User&quot;&#xA;    baseUrl = Environment.GetEnvironmentVariable(&quot;FINGUARD_CRM_BASE_URL&quot;, EnvironmentVariableTarget.User)&#xA;End If&#xA;If String.IsNullOrWhiteSpace(baseUrl) Then urlScope = &quot;Missing&quot;&#xA;configScopes = &quot;Token=&quot; &amp; tokenScope &amp; &quot; CrmUrl=&quot; &amp; urlScope&#xA;failure = &quot;ROBOT_TOKEN_MISSING&quot;&#xA;If String.IsNullOrWhiteSpace(token) Then Return&#xA;failure = &quot;ROBOT_CRM_URL_INVALID&quot;&#xA;Dim endpoint As Uri = Nothing&#xA;If Not Uri.TryCreate(baseUrl, UriKind.Absolute, endpoint) Then Return&#xA;If (endpoint.Scheme &lt;&gt; &quot;https&quot; AndAlso (endpoint.Scheme &lt;&gt; &quot;http&quot; OrElse Not endpoint.IsLoopback)) OrElse endpoint.UserInfo &lt;&gt; &quot;&quot; OrElse endpoint.Query &lt;&gt; &quot;&quot; OrElse endpoint.Fragment &lt;&gt; &quot;&quot; Then Return&#xA;Dim address = baseUrl.TrimEnd(&quot;/&quot;c) &amp; &quot;/api/automation/robot/requests/&quot; &amp; Uri.EscapeDataString(requestId) &amp; &quot;/receipt&quot;&#xA;Dim body = New Newtonsoft.Json.Linq.JObject(New Newtonsoft.Json.Linq.JProperty(&quot;dispatch_id&quot;, dispatchId))&#xA;Try&#xA;    Using handler As New System.Net.Http.HttpClientHandler With {.AllowAutoRedirect = False}&#xA;        Using client As New System.Net.Http.HttpClient(handler)&#xA;            client.Timeout = TimeSpan.FromSeconds(15)&#xA;            Using message As New System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Post, address)&#xA;                message.Headers.Authorization = New System.Net.Http.Headers.AuthenticationHeaderValue(&quot;Bearer&quot;, token)&#xA;                message.Content = New System.Net.Http.StringContent(body.ToString(Newtonsoft.Json.Formatting.None), System.Text.Encoding.UTF8, &quot;application/json&quot;)&#xA;                Using response = client.SendAsync(message).GetAwaiter().GetResult()&#xA;                    failure = &quot;CRM_REJECTED&quot;&#xA;                    If Not response.IsSuccessStatusCode Then Return&#xA;                    failure = &quot;CRM_INVALID_RESPONSE&quot;&#xA;                    Dim data = Newtonsoft.Json.Linq.JObject.Parse(response.Content.ReadAsStringAsync().GetAwaiter().GetResult())&#xA;                    Dim number = data.Value(Of String)(&quot;incident_id&quot;)&#xA;                    Dim state = data.Value(Of String)(&quot;status&quot;)&#xA;                    If data.Value(Of String)(&quot;request_id&quot;) &lt;&gt; requestId OrElse String.IsNullOrWhiteSpace(number) OrElse (state &lt;&gt; &quot;SUCCESS&quot; AndAlso state &lt;&gt; &quot;DUPLICATE&quot;) Then Return&#xA;                    receipt = number&#xA;                    result = state&#xA;                    failure = String.Empty&#xA;                End Using&#xA;            End Using&#xA;        End Using&#xA;    End Using&#xA;Catch ex As System.Threading.Tasks.TaskCanceledException&#xA;    failure = &quot;CRM_TIMEOUT&quot;&#xA;Catch ex As System.Net.Http.HttpRequestException&#xA;    failure = &quot;CRM_UNAVAILABLE&quot;&#xA;Catch ex As Newtonsoft.Json.JsonException&#xA;    failure = &quot;CRM_INVALID_RESPONSE&quot;&#xA;End Try">
+            <ui:InvokeCode.Arguments>
+              <scg:Dictionary x:TypeArguments="x:String, Argument">
+                <InArgument x:TypeArguments="x:String" x:Key="requestId">[in_RequestId]</InArgument>
+                <InArgument x:TypeArguments="x:String" x:Key="dispatchId">[in_DispatchId]</InArgument>
+                <OutArgument x:TypeArguments="x:String" x:Key="receipt">[incidentNo]</OutArgument>
+                <OutArgument x:TypeArguments="x:String" x:Key="result">[status]</OutArgument>
+                <OutArgument x:TypeArguments="x:String" x:Key="failure">[errorMsg]</OutArgument>
+                <OutArgument x:TypeArguments="x:String" x:Key="configScopes">[configScopes]</OutArgument>
+              </scg:Dictionary>
+            </ui:InvokeCode.Arguments>
+          </ui:InvokeCode>
+          <ui:LogMessage DisplayName="로봇 설정 조회 범위" Level="Info" Message="[configScopes]" />
+        </Sequence>
+      </If.Then>
+      <If.Else>
+        <Sequence DisplayName="로컬 request.json">
     <TryCatch DisplayName="전체 처리 (실패 시에도 멈추지 않고 결과 기록)" sap2010:WorkflowViewState.IdRef="TryCatch_1">
       <TryCatch.Try>
         <Sequence DisplayName="Try" sap2010:WorkflowViewState.IdRef="Sequence_2">
@@ -374,5 +410,30 @@
         </Sequence>
       </If.Else>
     </If>
+        </Sequence>
+      </If.Else>
+    </If>
+    <ui:MultipleAssign DisplayName="실행 결과 반환">
+      <ui:MultipleAssign.AssignOperations>
+        <scg:List x:TypeArguments="ui:AssignOperation" Capacity="4">
+          <ui:AssignOperation>
+            <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String">[out_RequestId]</OutArgument></ui:AssignOperation.To>
+            <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String">[requestId]</InArgument></ui:AssignOperation.Value>
+          </ui:AssignOperation>
+          <ui:AssignOperation>
+            <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String">[out_IncidentId]</OutArgument></ui:AssignOperation.To>
+            <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String">[incidentNo]</InArgument></ui:AssignOperation.Value>
+          </ui:AssignOperation>
+          <ui:AssignOperation>
+            <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String">[out_Status]</OutArgument></ui:AssignOperation.To>
+            <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String">[status]</InArgument></ui:AssignOperation.Value>
+          </ui:AssignOperation>
+          <ui:AssignOperation>
+            <ui:AssignOperation.To><OutArgument x:TypeArguments="x:String">[out_Error]</OutArgument></ui:AssignOperation.To>
+            <ui:AssignOperation.Value><InArgument x:TypeArguments="x:String">[errorMsg]</InArgument></ui:AssignOperation.Value>
+          </ui:AssignOperation>
+        </scg:List>
+      </ui:MultipleAssign.AssignOperations>
+    </ui:MultipleAssign>
   </Sequence>
 </Activity>

@@ -11,7 +11,7 @@
   "entitiesStores": [],
   "schemaVersion": "4.1",
   "studioVersion": "26.10.0.0",
-  "projectVersion": "1.0.0",
+  "projectVersion": "1.0.3",
   "runtimeOptions": {
     "autoDispose": false,
     "netFrameworkLazyLoading": false,
@@ -47,8 +47,38 @@
     {
       "filePath": "Main.xaml",
       "uniqueId": "4358a8a7-09e3-45b4-af96-181bc6537c55",
-      "input": [],
-      "output": []
+      "input": [
+        {
+          "name": "in_RequestId",
+          "type": "System.String",
+          "required": false,
+          "hasDefault": false
+        },
+        {
+          "name": "in_DispatchId",
+          "type": "System.String",
+          "required": false,
+          "hasDefault": false
+        }
+      ],
+      "output": [
+        {
+          "name": "out_RequestId",
+          "type": "System.String"
+        },
+        {
+          "name": "out_IncidentId",
+          "type": "System.String"
+        },
+        {
+          "name": "out_Status",
+          "type": "System.String"
+        },
+        {
+          "name": "out_Error",
+          "type": "System.String"
+        }
+      ]
     }
   ],
   "isTemplate": false,

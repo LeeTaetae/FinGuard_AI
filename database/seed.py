@@ -1,10 +1,15 @@
 
 # 시드는 INSERT OR IGNORE 라서 이미 있는 ID의 값은 바뀌지 않는다.
-# - CSV 값을 고친 뒤 반영하려면 finguard.db 를 지우고 이 파일을 다시 실행한다.
+# - 기존 행을 갱신하려면 필요한 값만 명시적으로 UPDATE 한다.
 # - 시연 전에 AI 요약을 비우려면: UPDATE consultations SET ai_summary = NULL;
 import csv
 import sqlite3
 from pathlib import Path
+
+if __package__:
+    from .migrate import apply_migrations
+else:
+    from migrate import apply_migrations
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "finguard.db"
@@ -35,6 +40,7 @@ def initialize_database(db_path=DB_PATH):
 
         with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
             conn.executescript(f.read())
+        apply_migrations(conn)
 
         # 고객 10명, 거래 50건 (기존 C001~C003, T001~T003 포함)
         customers = load_csv_rows(CUSTOMERS_CSV_PATH, CUSTOMER_FIELDS)

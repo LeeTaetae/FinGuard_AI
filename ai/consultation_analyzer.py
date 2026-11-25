@@ -1,24 +1,15 @@
 
-import os
 from enum import Enum
 
-from dotenv import load_dotenv
-from openai import OpenAI
 from pydantic import BaseModel, ConfigDict
 
 from ai.manual import CONSULTATION_MANUAL
 from ai.safety_validator import validate_safety
+from ai.uipath_client import generate_response
 
 
 # ==========================================
-# 1. 환경 변수 로드
-# ==========================================
-
-load_dotenv()
-
-
-# ==========================================
-# 2. 상담 유형 정의
+# 1. 상담 유형 정의
 # ==========================================
 
 class Category(str, Enum):
@@ -30,7 +21,7 @@ class Category(str, Enum):
 
 
 # ==========================================
-# 3. 상담 후속 조치 정의
+# 2. 상담 후속 조치 정의
 # ==========================================
 
 class Action(str, Enum):
@@ -41,7 +32,7 @@ class Action(str, Enum):
 
 
 # ==========================================
-# 4. AI 응답 JSON 스키마
+# 3. AI 응답 JSON 스키마
 # ==========================================
 
 class ConsultationResult(BaseModel):
@@ -55,7 +46,7 @@ class ConsultationResult(BaseModel):
 
 
 # ==========================================
-# 5. ChatGPT 시스템 프롬프트
+# 4. LLM 시스템 프롬프트
 # ==========================================
 
 SYSTEM_PROMPT = f"""
@@ -293,7 +284,10 @@ ESCALATE_TO_AGENT:
 11. 고객의 진술만으로
     미승인 거래 여부를 확정하지 않습니다.
 
-12. AI는 금융 업무를 직접 처리하지 않습니다.
+12. 실제로 수행하지 않은 거래 취소, 카드 정지, 고객 연락을
+    완료했다고 말하거나 처리 결과를 보장하지 않습니다.
+
+13. AI는 금융 업무를 직접 처리하지 않습니다.
 
 
 ==========================================
@@ -312,7 +306,7 @@ ESCALATE_TO_AGENT:
 
 
 # ==========================================
-# 6. 상담 분석 함수
+# 5. UiPath SDK 기반 상담 분석 함수
 # ==========================================
 
 def analyze_consultation(conversation: str) -> dict:
@@ -339,53 +333,18 @@ def analyze_consultation(conversation: str) -> dict:
         )
 
     # ======================================
-    # API 키 확인
+    # UiPath LLM Gateway 호출
     # ======================================
 
-    api_key = os.getenv("OPENAI_API_KEY")
-
-    if not api_key:
-        raise RuntimeError(
-            "OPENAI_API_KEY가 설정되지 않았습니다."
-        )
-
-    # ======================================
-    # OpenAI 클라이언트 생성
-    # ======================================
-
-    client = OpenAI(
-        api_key=api_key,
-        timeout=30.0
+    result = generate_response(
+        system_prompt=SYSTEM_PROMPT,
+        user_prompt=conversation,
+        response_schema=ConsultationResult,
     )
 
     # ======================================
-    # ChatGPT 상담 분석
+    # AI 분석 결과 확인
     # ======================================
-
-    response = client.chat.completions.parse(
-        model=os.getenv(
-            "OPENAI_MODEL",
-            "gpt-4o-mini"
-        ),
-        messages=[
-            {
-                "role": "system",
-                "content": SYSTEM_PROMPT
-            },
-            {
-                "role": "user",
-                "content": conversation
-            }
-        ],
-        response_format=ConsultationResult,
-        temperature=0.2
-    )
-
-    # ======================================
-    # AI 분석 결과 추출
-    # ======================================
-
-    result = response.choices[0].message.parsed
 
     if result is None:
         raise RuntimeError(
