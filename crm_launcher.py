@@ -162,7 +162,7 @@ def open_when_ready(url):
     try:
         with build_opener(ProxyHandler({})).open(url + "/health", timeout=5) as response:
             if response.status == 200:
-                webbrowser.open(url + "/login")
+                webbrowser.open(url + "/")
     except OSError:
         print("Open the CRM in your browser using the displayed URL.")
 

@@ -126,33 +126,33 @@ def test_csrf_is_required_on_automation_and_legacy_writes(demo):
     assert demo.post("/crm/incidents", data=FIELDS).status_code == 403
 
 
-def test_operator_creates_and_supervisor_approves_from_review_screen(demo):
+def test_operator_creates_and_approves_own_telephone_request(demo):
     login(demo)
     assert any(row["customer_id"] == "C001" for row in demo.get("/api/customers").json)
     page = demo.get("/consultation")
-    assert 'id="approve-btn" type="submit" hidden' in page.text
-    assert 'id="reject-btn"' not in page.text
+    assert 'id="approve-btn" type="submit"' in page.text
+    assert 'id="reject-btn"' in page.text
     created = create(demo, "auth-approval")
     assert created.status_code == 201
     state = created.json
     request_id = state["request_id"]
     assert state["ai_result"] == AI and state["fds_result"]["risk_level"] in ("LOW", "MEDIUM", "HIGH")
-    assert post(demo, f"{URL}/{request_id}/approve", FIELDS).status_code == 403
-    assert demo.get("/consultation/review").status_code == 403
+    assert request_id in demo.get("/consultation/review").text
     supervisor = web.app.test_client()
     login(supervisor, "supervisor")
     assert demo.get(f"{URL}/{request_id}").json["status"] == "PENDING_APPROVAL"
-    assert request_id in supervisor.get("/consultation/review").text
-    review = supervisor.get(f"/consultation?request_id={request_id}")
-    assert "가상 고객의 해외 결제 문의" in review.text and 'id="reject-btn"' in review.text
-    assert supervisor.post(f"{URL}/{request_id}/approve", json=FIELDS).status_code == 403
-    approved = post(supervisor, f"{URL}/{request_id}/approve", FIELDS).json
-    assert approved["status"] == "APPROVED"
-    assert approved["decision_by"] == "supervisor" and approved["decision_at"]
-    assert approved["dispatch_pending"] is True and approved["incident_id"] is None
-    reopened = supervisor.get(f"/consultation?request_id={request_id}").text
-    assert '"decision_by": "supervisor"' in reopened and '"status": "APPROVED"' in reopened
     assert request_id not in supervisor.get("/consultation/review").text
+    review = demo.get(f"/consultation?request_id={request_id}")
+    assert "가상 고객의 해외 결제 문의" in review.text and 'id="reject-btn"' in review.text
+    assert post(supervisor, f"{URL}/{request_id}/approve", FIELDS).status_code == 403
+    assert demo.post(f"{URL}/{request_id}/approve", json=FIELDS).status_code == 403
+    approved = post(demo, f"{URL}/{request_id}/approve", FIELDS).json
+    assert approved["status"] == "APPROVED"
+    assert approved["decision_by"] == "agent" and approved["decision_at"]
+    assert approved["dispatch_pending"] is True and approved["incident_id"] is None
+    reopened = demo.get(f"/consultation?request_id={request_id}").text
+    assert '"decision_by": "agent"' in reopened and '"status": "APPROVED"' in reopened
+    assert request_id not in demo.get("/consultation/review").text
     direct = demo.post("/crm/incidents", data={
         **FIELDS, "csrf_token": csrf(demo), "request_id": request_id, "customer_id": "C001",
     })

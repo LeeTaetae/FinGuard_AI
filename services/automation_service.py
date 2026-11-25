@@ -89,7 +89,8 @@ def find_retry(conn, *, actor, idempotency_key, customer_id, conversation):
     return result
 
 
-def create_request(conn, *, actor, idempotency_key, customer_id, conversation, ai, fds):
+def create_request(conn, *, actor, idempotency_key, customer_id, conversation, ai, fds,
+                   on_create=None, retry_guard=None):
     request_id = f"AUTO-{uuid4().hex}"
     consultation_id = f"CONS-{uuid4().hex}"
     with conn:
@@ -97,6 +98,8 @@ def create_request(conn, *, actor, idempotency_key, customer_id, conversation, a
         retry = find_retry(conn, actor=actor, idempotency_key=idempotency_key,
                            customer_id=customer_id, conversation=conversation)
         if retry is not None:
+            if retry_guard:
+                retry_guard(conn, retry["request_id"])
             return retry, False
         conn.execute(
             """
@@ -119,6 +122,8 @@ def create_request(conn, *, actor, idempotency_key, customer_id, conversation, a
              json.dumps(fds, ensure_ascii=False), int(ai is None or ai["requires_human_review"])),
         )
         _event(conn, request_id, None, Status.PENDING_APPROVAL, actor)
+        if on_create:
+            on_create(conn, request_id)
         return get_request(conn, request_id), True
 
 
@@ -127,7 +132,7 @@ def _validate_transition(source, target):
         raise AutomationConflict("현재 상태에서는 요청된 상태로 변경할 수 없습니다.")
 
 
-def decide(conn, request_id, target, *, actor, fields, categories):
+def decide(conn, request_id, target, *, actor, fields, categories, guard=None, on_decide=None):
     if target not in (Status.APPROVED, Status.REJECTED):
         raise AutomationConflict("승인 또는 거부만 기록할 수 있습니다.")
     if target == Status.APPROVED:
@@ -140,6 +145,8 @@ def decide(conn, request_id, target, *, actor, fields, categories):
     with conn:
         conn.execute("BEGIN IMMEDIATE")
         current = get_request(conn, request_id)
+        if guard:
+            guard(conn)
         if current["status"] == target and current["decision_by"] == actor:
             previous = tuple(current[name] for name in
                              ("incident_category", "incident_summary", "incident_risk_level"))
@@ -158,6 +165,8 @@ def decide(conn, request_id, target, *, actor, fields, categories):
             (target, actor, *decision_values, int(target == Status.APPROVED), request_id),
         )
         _event(conn, request_id, current["status"], target, actor)
+        if on_decide:
+            on_decide(conn)
         return get_request(conn, request_id)
 
 

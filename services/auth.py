@@ -18,8 +18,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 
 ROLE_PERMISSIONS = {
-    "AGENT": frozenset(("create", "read")),
-    "SUPERVISOR": frozenset(("create", "read", "decide", "dispatch")),
+    "AGENT": frozenset(("create", "read", "decide_own", "dispatch_own")),
+    "SUPERVISOR": frozenset(("read", "decide", "dispatch")),
     "ADMIN": frozenset(("create", "read", "decide", "dispatch", "manage_users")),
 }
 
@@ -71,7 +71,8 @@ def _revoke_session(conn):
 
 
 def _load_identity():
-    if not local_enabled() or request.endpoint == "automation_robot_receipt":
+    if (not local_enabled() or request.endpoint == "automation_robot_receipt"
+            or request.blueprint == "customer"):
         return
     login_token = session.get("login_token")
     if login_token:
@@ -89,7 +90,7 @@ def _load_identity():
         else:
             g.local_user = user
 
-    if request.endpoint in (None, "index", "health", "auth.login", "static"):
+    if request.endpoint in (None, "index", "health", "auth.login", "static", "favicon"):
         return
     if not g.get("local_user"):
         if _api_request():
@@ -113,7 +114,7 @@ def login():
         return render_template("crm/login.html", error="로그인 정보를 확인해 주세요."), 401
     with closing(_connect()) as conn:
         user = conn.execute(
-            "SELECT username, password_hash, active FROM auth_users WHERE username = ?",
+            "SELECT username, password_hash, active, role FROM auth_users WHERE username = ?",
             (username,),
         ).fetchone()
     password_hash = user["password_hash"] if user else current_app.extensions["finguard_dummy_hash"]
@@ -126,6 +127,9 @@ def login():
     expires_at = now + int(current_app.permanent_session_lifetime.total_seconds())
     with closing(_connect()) as conn, conn:
         _revoke_session(conn)
+        customer_token = session.get("customer_login_token")
+        if customer_token:
+            conn.execute("DELETE FROM customer_sessions WHERE token_hash=?", (_session_hash(customer_token),))
         conn.execute("DELETE FROM auth_sessions WHERE expires_at <= ?", (now,))
         conn.execute(
             "INSERT INTO auth_sessions (token_hash, username, expires_at) VALUES (?, ?, ?)",
@@ -135,7 +139,8 @@ def login():
     session.permanent = True
     session["login_token"] = token
     csrf_token()
-    return redirect(url_for("consultation_form"))
+    destination = "report_staff.queue" if user["role"] in ("AGENT", "ADMIN") else "consultation_review"
+    return redirect(url_for(destination))
 
 
 @auth.post("/logout")
@@ -157,6 +162,43 @@ def users():
             "SELECT username, role, active, created_at FROM auth_users ORDER BY username"
         ).fetchall()
     return render_template("crm/users.html", accounts=accounts)
+
+
+@auth.post("/auth/users/agent")
+def add_agent():
+    if not local_permission("manage_users"):
+        abort(403)
+    username, password = request.form.get("username", "").strip(), request.form.get("password", "")
+    if not re.fullmatch(r"[A-Za-z0-9_.-]{1,64}", username) or not 12 <= len(password) <= 128:
+        abort(400, "계정 ID와 비밀번호 조건을 확인해 주세요.")
+    try:
+        with closing(_connect()) as conn, conn:
+            conn.execute(
+                "INSERT INTO auth_users(username,password_hash,role) VALUES (?,?,'AGENT')",
+                (username, generate_password_hash(password)),
+            )
+    except sqlite3.IntegrityError:
+        abort(409, "이미 존재하는 직원 계정입니다.")
+    return redirect(url_for("auth.users"), code=303)
+
+
+@auth.post("/auth/users/<username>/active")
+def set_active(username):
+    if not local_permission("manage_users"):
+        abort(403)
+    state = request.form.get("active")
+    if state not in ("0", "1"):
+        abort(400)
+    with closing(_connect()) as conn, conn:
+        updated = conn.execute(
+            "UPDATE auth_users SET active=? WHERE username=? AND role IN ('AGENT','SUPERVISOR')",
+            (int(state), username),
+        )
+        if updated.rowcount != 1:
+            abort(404)
+        if state == "0":
+            conn.execute("DELETE FROM auth_sessions WHERE username=?", (username,))
+    return redirect(url_for("auth.users"), code=303)
 
 
 @click.command("create-user")
@@ -204,6 +246,8 @@ def configure_auth(app, connect, limiter):
         "local_user": g.get("local_user"),
         "csrf_token": csrf_token,
     })
-    limiter.limit("10 per minute")(auth)
+    limiter.limit("10 per minute", exempt_when=lambda: (
+        request.endpoint == "auth.login" and request.method in ("GET", "HEAD", "OPTIONS")
+    ))(auth)
     app.register_blueprint(auth)
     app.cli.add_command(create_user)

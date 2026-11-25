@@ -80,3 +80,15 @@ def test_save_local_config_copies_only_supported_finguard_settings(tmp_path, mon
     assert launcher.save_local_config() == 0
     assert dotenv_values(tmp_path / ".env.local") == {"FINGUARD_SECRET_KEY": "sample-key-for-test"}
     assert "sample-key-for-test" not in capsys.readouterr().out
+
+
+def test_opens_login_once_after_health_check(monkeypatch):
+    from unittest.mock import MagicMock
+
+    opener, browser = MagicMock(), MagicMock()
+    opener.open.return_value.__enter__.return_value.status = 200
+    monkeypatch.setattr(launcher, "build_opener", lambda *_: opener)
+    monkeypatch.setattr(launcher.webbrowser, "open", browser)
+    launcher.open_when_ready("http://127.0.0.1:5000")
+    opener.open.assert_called_once_with("http://127.0.0.1:5000/health", timeout=5)
+    browser.assert_called_once_with("http://127.0.0.1:5000/")
