@@ -46,7 +46,7 @@ def _record(conn, request_id, actor, *, status, job_state, key=None,
     )
 
 
-def dispatch(conn, request_id, actor, client):
+def dispatch(conn, request_id, actor, client, *, guard=None):
     current = get_request(conn, request_id)
     if current["status"] != Status.APPROVED or not current["dispatch_pending"]:
         raise AutomationConflict("실행 대기 중인 승인 요청만 시작할 수 있습니다.")
@@ -54,6 +54,8 @@ def dispatch(conn, request_id, actor, client):
     dispatch_id = uuid4().hex
     with conn:
         conn.execute("BEGIN IMMEDIATE")
+        if guard:
+            guard(conn)
         current = get_request(conn, request_id)
         if (current["status"] != Status.APPROVED or not current["dispatch_pending"]
                 or execution(conn, request_id)):

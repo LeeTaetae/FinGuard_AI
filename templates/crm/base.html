@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="{{ url_for('favicon') }}" type="image/svg+xml">
 <title>{% block title %}모의 CRM{% endblock %} | FinGuard CRM</title>
 <style>
   body { margin: 0; font-family: 'Noto Sans KR', Arial, sans-serif; background: #f4f7fb; color: #17243a; }
@@ -28,29 +29,55 @@
   .actions-row { display: flex; gap: 10px; align-items: center; }
   .secondary { background: #fff; color: #2563eb; border: 1px solid #2563eb; }
 </style>
+<link rel="stylesheet" href="{{ url_for('static', filename='crm.css') }}">
+{% block styles %}{% endblock %}
 </head>
-<body>
-<header>
-  <b>FinGuard 모의 CRM</b>
-  {% if not local_auth_enabled or local_user %}
-  <a id="nav-consultation" href="{{ url_for('consultation_form') }}">상담 입력</a>
-  <a id="nav-new" href="{{ url_for('crm_incident_form') }}">사고 접수</a>
-  <a id="nav-list" href="{{ url_for('crm_incident_list') }}">접수 목록</a>
+<body class="{% block body_class %}crm{% if request.endpoint == 'auth.login' %} crm-signin{% endif %}{% endblock %}">
+{% block header %}
+<header class="crm-header">
+  <div class="crm-header-inner">
+  <a class="crm-brand" href="{{ url_for('report_staff.queue' if local_user and local_user.role in ('AGENT', 'ADMIN') else 'consultation_form') }}">
+    <img src="{{ url_for('favicon') }}" alt="" width="36" height="36">
+    <span>FinGuard<small>상담원 CRM</small></span>
+  </a>
+  <nav class="crm-nav" aria-label="상담원 메뉴">
+  {% if local_user and local_user.role in ("AGENT", "ADMIN") %}
+  <a href="{{ url_for('report_staff.queue') }}" {% if request.endpoint in ('report_staff.queue', 'report_staff.review') %}aria-current="page"{% endif %}>고객 신고</a>
+  {% endif %}
+  {% if (not local_auth_enabled or local_user) and request.endpoint != 'index' and request.blueprint != 'customer' %}
+  <a id="nav-consultation" href="{{ url_for('consultation_form') }}" {% if request.endpoint == 'consultation_form' %}aria-current="page"{% endif %}>전화 상담 등록</a>
   {% endif %}
   {% if local_user %}
-  {% if local_user.role in ("SUPERVISOR", "ADMIN") %}
-  <a href="{{ url_for('consultation_review') }}">승인 대기</a>
+  {% if local_user.role in ("AGENT", "SUPERVISOR", "ADMIN") %}
+  <a href="{{ url_for('consultation_review') }}" {% if request.endpoint in ('consultation_review', 'consultation_executions') %}aria-current="page"{% endif %}>전화 상담 검토</a>
   {% endif %}
+  {% endif %}
+  {% if not local_auth_enabled or local_user %}
+  <a id="nav-new" href="{{ url_for('crm_incident_form') }}" {% if request.endpoint in ('crm_incident_form', 'crm_incident_create') %}aria-current="page"{% endif %}>사고 접수</a>
+  <a id="nav-list" href="{{ url_for('crm_incident_list') }}" {% if request.endpoint in ('crm_incident_list', 'crm_incident_detail') %}aria-current="page"{% endif %}>접수 목록</a>
+  {% endif %}
+  {% if local_user %}
   {% if local_user.role == "ADMIN" %}
-  <a href="{{ url_for('auth.users') }}">계정</a>
+  <a href="{{ url_for('auth.users') }}" {% if request.endpoint == 'auth.users' %}aria-current="page"{% endif %}>계정</a>
+  <a href="{{ url_for('report_staff.dashboard') }}" {% if request.endpoint in ('report_staff.dashboard', 'report_staff.admin_history') %}aria-current="page"{% endif %}>업무 현황</a>
   {% endif %}
-  <span>{{ local_user.username }} · {{ local_user.role }}</span>
+  {% endif %}
+  </nav>
+  {% if local_user %}
+  <div class="crm-account">
+  {% set role_labels = {"AGENT": "상담원", "ADMIN": "관리자", "SUPERVISOR": "승인자"} %}
+  <span>{{ local_user.username }} <small>{{ role_labels.get(local_user.role, local_user.role) }}</small></span>
   <form method="post" action="{{ url_for('auth.logout') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" style="margin: 0">로그아웃</button>
+    <button type="submit">로그아웃</button>
   </form>
+  </div>
+  {% elif local_auth_enabled %}
+  <a class="crm-home" href="{{ url_for('index') }}">고객 홈</a>
   {% endif %}
+  </div>
 </header>
+{% endblock %}
 <main>{% block content %}{% endblock %}</main>
 </body>
 </html>

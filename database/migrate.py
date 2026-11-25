@@ -48,6 +48,8 @@ def apply_migrations(conn):
         _execute_script(conn, "002_auth_users.sql")
         _execute_script(conn, "003_auth_sessions.sql")
         _execute_script(conn, "004_orchestrator.sql")
+        _execute_script(conn, "005_customer_portal.sql")
+        _execute_script(conn, "006_customer_advice.sql")
 
 
 def main():

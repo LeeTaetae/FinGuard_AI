@@ -4,12 +4,26 @@
 <div class="card">
   <h2>상담원 계정</h2>
   <table>
-    <thead><tr><th>계정 ID</th><th>역할</th><th>상태</th></tr></thead>
+    <thead><tr><th>계정 ID</th><th>역할</th><th>상태</th><th>관리</th></tr></thead>
     <tbody>
       {% for account in accounts %}
-      <tr><td>{{ account.username }}</td><td>{{ account.role }}</td><td>{{ "사용 중" if account.active else "비활성" }}</td></tr>
+      <tr><td>{{ account.username }}</td><td>{{ account.role }}</td><td>{{ "사용 중" if account.active else "비활성" }}</td>
+      <td>{% if account.role in ("AGENT", "SUPERVISOR") %}
+      <form method="post" action="{{ url_for('auth.set_active', username=account.username) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="active" value="{{ 0 if account.active else 1 }}">
+        <button>{{ "비활성화" if account.active else "활성화" }}</button>
+      </form>{% endif %}</td></tr>
       {% endfor %}
     </tbody>
   </table>
+  <h3>상담원 계정 추가</h3>
+  <form method="post" action="{{ url_for('auth.add_agent') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="new-user">계정 ID</label><input id="new-user" name="username" maxlength="64" required>
+    <label for="new-password">비밀번호 (12~128자)</label><input id="new-password" name="password" type="password"
+      minlength="12" maxlength="128" autocomplete="new-password" required>
+    <button>상담원 추가</button>
+  </form>
 </div>
 {% endblock %}

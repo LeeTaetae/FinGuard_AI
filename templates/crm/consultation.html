@@ -1,8 +1,8 @@
 {% extends "crm/base.html" %}
-{% block title %}상담 입력{% endblock %}
+{% block title %}전화 상담 등록{% endblock %}
 {% block content %}
 <div class="card">
-  <h2>상담 입력</h2>
+  <h1>전화 상담 등록</h1>
   <p class="hint">{{ "고객 문의를 분석하고 검토 결과를 기록합니다." if automation_enabled else "고객 문의를 분석하고 결과를 확인한 뒤 직접 접수합니다." }}</p>
 
   <label for="customer_id">고객 ID</label>
@@ -19,7 +19,7 @@
 
 <div id="result-card" class="card hidden" style="margin-top: 16px;">
   <h2>AI 분석 결과</h2>
-  <table>
+  <div class="crm-table-scroll"><table>
     <tr><th>상담 유형</th><td>
       <select id="result-category">
         {% if automation_enabled %}<option value="">선택</option>{% endif %}
@@ -41,7 +41,7 @@
       </select>
       <span id="result-risk-reasons" class="hint"></span>
     </td></tr>
-  </table>
+  </table></div>
 
   {% if automation_enabled %}
   <p class="hint">승인하면 검토 결과와 전송 대기 기록을 저장합니다. 이 단계에서는 로봇을 실행하지 않습니다.</p>
@@ -96,6 +96,9 @@ let jobActionPending = false;
 let currentRequest = null;
 let lastInput = null;
 let idempotencyKey = null;
+const koreanTime = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: "Asia/Seoul", dateStyle: "medium", timeStyle: "short",
+});
 
 function showAutomationState(state) {
   const labels = {
@@ -109,7 +112,7 @@ function showAutomationState(state) {
   };
   automationStatus.textContent = state.request_id + " · " + (labels[state.status] || state.status);
   document.getElementById("automation-decision").textContent = state.decision_by
-    ? "처리자 " + state.decision_by + " · " + state.decision_at + " UTC" : "";
+    ? "처리자 " + state.decision_by + " · " + koreanTime.format(new Date(state.decision_at.replace(" ", "T") + "Z")) + " (한국 시간)" : "";
   const ready = state.status === "PENDING_APPROVAL" && canDecide;
   document.getElementById("approve-btn").disabled = !ready;
   if (rejectBtn) rejectBtn.disabled = !ready;
