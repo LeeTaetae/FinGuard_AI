@@ -5,6 +5,7 @@
   <h2>사고 접수</h2>
   {% if error %}<p id="form-error" class="error">{{ error }}</p>{% endif %}
   <form id="incident-form" method="post" action="{{ url_for('crm_incident_create') }}">
+    {% if local_auth_enabled %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
     <label for="request_id">요청 ID <span class="hint">(UiPath 자동 접수 시 입력, 수동 접수는 비워두기)</span></label>
     <input id="request_id" name="request_id" value="{{ form.request_id or '' }}" maxlength="50">
 

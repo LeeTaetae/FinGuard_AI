@@ -1,0 +1,15 @@
+{% extends "crm/base.html" %}
+{% block title %}상담원 계정{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>상담원 계정</h2>
+  <table>
+    <thead><tr><th>계정 ID</th><th>역할</th><th>상태</th></tr></thead>
+    <tbody>
+      {% for account in accounts %}
+      <tr><td>{{ account.username }}</td><td>{{ account.role }}</td><td>{{ "사용 중" if account.active else "비활성" }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

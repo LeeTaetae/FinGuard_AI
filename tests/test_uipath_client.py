@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+import httpx
 import pytest
 from pydantic import ValidationError
 
@@ -51,3 +52,16 @@ def test_gateway_auth_configuration_validation():
     with patch("ai.uipath_client.UiPathAzureChatOpenAI", side_effect=error.value):
         with pytest.raises(UiPathLLMError, match="인증 또는 연결 설정"):
             generate_response(SYSTEM_PROMPT, CONVERSATION, ConsultationResult)
+
+
+@pytest.mark.parametrize(("status", "reason"), [(401, "authentication"), (403, "permission")])
+def test_gateway_http_diagnostic_excludes_provider_payload(status, reason):
+    request = httpx.Request("POST", "https://example.invalid")
+    response = httpx.Response(status, request=request, text="private-provider-payload")
+    error = httpx.HTTPStatusError("private-error", request=request, response=response)
+    with patch("ai.uipath_client.UiPathAzureChatOpenAI") as sdk:
+        sdk.return_value.with_structured_output.return_value.invoke.side_effect = error
+        with pytest.raises(UiPathLLMError) as raised:
+            generate_response(SYSTEM_PROMPT, CONVERSATION, ConsultationResult)
+    assert raised.value.diagnostic == f"stage=invoke reason={reason} gateway_http={status}"
+    assert "private" not in str(raised.value)

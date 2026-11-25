@@ -3,17 +3,18 @@
 {% block content %}
 <div class="card">
   <h2>상담 입력</h2>
-  <p class="hint">고객 문의를 입력하고 AI 분석을 받은 뒤, 내용을 확인하고 승인하면 사고로 접수됩니다.</p>
+  <p class="hint">{{ "고객 문의를 분석하고 검토 결과를 기록합니다." if automation_enabled else "고객 문의를 분석하고 결과를 확인한 뒤 직접 접수합니다." }}</p>
 
   <label for="customer_id">고객 ID</label>
-  <input id="customer_id" name="customer_id" placeholder="C001">
+  <input id="customer_id" name="customer_id" placeholder="C001" value="{{ saved_request.customer_id if saved_request else '' }}"{% if saved_request %} readonly{% elif local_user %} list="customer-options"{% endif %}>
+  {% if local_user and not saved_request %}<datalist id="customer-options"></datalist>{% endif %}
 
   <label for="conversation">상담 내용</label>
-  <textarea id="conversation" maxlength="10000" placeholder="고객이 말한 내용을 입력하세요."></textarea>
+  <textarea id="conversation" maxlength="10000"{% if saved_request %} readonly{% endif %} placeholder="고객이 말한 내용을 입력하세요.">{{ saved_conversation or "" }}</textarea>
 
   <p id="analyze-error" class="error hidden"></p>
 
-  <button id="analyze-btn" type="button">AI 분석 요청</button>
+  <button id="analyze-btn" type="button"{% if saved_request %} hidden{% endif %}>AI 분석 요청</button>
 </div>
 
 <div id="result-card" class="card hidden" style="margin-top: 16px;">
@@ -21,6 +22,7 @@
   <table>
     <tr><th>상담 유형</th><td>
       <select id="result-category">
+        {% if automation_enabled %}<option value="">선택</option>{% endif %}
         {% for code, label in categories.items() %}
         <option value="{{ code }}">{{ label }}</option>
         {% endfor %}
@@ -41,29 +43,190 @@
     </td></tr>
   </table>
 
-  <p class="hint">위 내용을 확인·수정한 뒤 승인하면 사고로 접수되고 처리 상태 화면으로 이동합니다.</p>
-  <form id="approve-form" method="post" action="{{ url_for('crm_incident_create') }}">
+  {% if automation_enabled %}
+  <p class="hint">승인하면 검토 결과와 전송 대기 기록을 저장합니다. 이 단계에서는 로봇을 실행하지 않습니다.</p>
+  <p id="automation-status" role="status"></p>
+  <p id="automation-decision" class="hint"></p>
+  <dl id="job-details" hidden>
+    <dt>Job ID</dt><dd id="job-key"></dd>
+    <dt>Orchestrator 상태</dt><dd id="job-state"></dd>
+    <dt>로봇 접수 결과</dt><dd id="job-result"></dd>
+    <dt>CRM 접수번호</dt><dd id="job-incident"></dd>
+    <dt>실행 오류</dt><dd id="job-error"></dd>
+  </dl>
+  {% if can_dispatch %}
+  <div class="actions-row">
+    <button id="dispatch-btn" type="button" hidden>자동화 실행</button>
+    <button id="refresh-job-btn" type="button" hidden>Job 상태 조회</button>
+  </div>
+  <p id="job-action-error" role="alert"></p>
+  {% endif %}
+  {% else %}
+  <p class="hint">자동화 승인에는 인증과 승인 권한이 필요합니다. 이 화면에서는 모의 CRM에 직접 접수합니다.</p>
+  {% endif %}
+  <form id="approve-form" method="post" {% if not automation_enabled %}action="{{ url_for('crm_incident_create') }}"{% endif %}>
+    {% if local_auth_enabled %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
     <input type="hidden" name="customer_id" id="approve-customer-id">
     <input type="hidden" name="category" id="approve-category">
     <input type="hidden" name="summary" id="approve-summary">
     <input type="hidden" name="risk_level" id="approve-risk-level">
     <div class="actions-row">
-      <button id="approve-btn" type="submit">승인하고 접수</button>
+      <button id="approve-btn" type="submit" {% if automation_enabled and not can_decide %}hidden disabled{% endif %}>{{ "승인 기록" if automation_enabled else "직접 접수" }}</button>
+      {% if automation_enabled and can_decide %}
+      <button id="reject-btn" type="button">거부 기록</button>
+      {% endif %}
     </div>
   </form>
 </div>
 
 <script>
 const ACTION_LABELS = {{ actions | tojson }};
-const RISK_BADGE_CLASS = { LOW: "badge-low", MEDIUM: "badge-medium", HIGH: "badge-high" };
+const automationEnabled = {{ automation_enabled | tojson }};
+const canDecide = {{ can_decide | tojson }};
+const savedRequest = {{ saved_request | tojson }};
+const jsonHeaders = { "Content-Type": "application/json" };
+{% if local_auth_enabled %}
+jsonHeaders["X-CSRF-Token"] = {{ csrf_token() | tojson }};
+{% endif %}
+const automationStatus = document.getElementById("automation-status");
+const rejectBtn = document.getElementById("reject-btn");
+const dispatchBtn = document.getElementById("dispatch-btn");
+const refreshJobBtn = document.getElementById("refresh-job-btn");
+let jobActionPending = false;
+let currentRequest = null;
+let lastInput = null;
+let idempotencyKey = null;
+
+function showAutomationState(state) {
+  const labels = {
+    PENDING_APPROVAL: "승인 대기",
+    APPROVED: "승인 기록 완료 · 전송 대기",
+    REJECTED: "거부 기록 완료",
+    QUEUED: "실행 대기",
+    RUNNING: "실행 중",
+    SUCCEEDED: "CRM 접수 확인 완료",
+    FAILED: "실행 실패",
+  };
+  automationStatus.textContent = state.request_id + " · " + (labels[state.status] || state.status);
+  document.getElementById("automation-decision").textContent = state.decision_by
+    ? "처리자 " + state.decision_by + " · " + state.decision_at + " UTC" : "";
+  const ready = state.status === "PENDING_APPROVAL" && canDecide;
+  document.getElementById("approve-btn").disabled = !ready;
+  if (rejectBtn) rejectBtn.disabled = !ready;
+  const job = state.orchestrator;
+  document.getElementById("job-details").hidden = !job;
+  if (job) {
+    document.getElementById("job-key").textContent = job.job_key || "확인 대기";
+    document.getElementById("job-state").textContent = job.job_state;
+    document.getElementById("job-result").textContent = job.result_status || "—";
+    document.getElementById("job-incident").textContent = job.receipt_id || "—";
+    document.getElementById("job-error").textContent = job.error_message || "—";
+  }
+  if (dispatchBtn) {
+    dispatchBtn.hidden = !(state.status === "APPROVED" && state.dispatch_pending);
+    refreshJobBtn.hidden = !job || ["SUCCEEDED", "FAILED"].includes(state.status);
+    dispatchBtn.disabled = refreshJobBtn.disabled = jobActionPending;
+  }
+}
+
+async function updateJob(action) {
+  if (jobActionPending || !currentRequest) return;
+  const state = currentRequest;
+  const url = "/api/automation/requests/" + encodeURIComponent(state.request_id);
+  const error = document.getElementById("job-action-error");
+  error.textContent = "";
+  jobActionPending = true;
+  showAutomationState(state);
+  try {
+    const response = await fetch(url + "/" + action, {
+      method: "POST", headers: jsonHeaders, body: "{}",
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Job 상태를 확인할 수 없습니다.");
+    if (currentRequest === state) currentRequest = data;
+  } catch (err) {
+    error.textContent = err.message;
+    try {
+      const response = await fetch(url);
+      if (response.ok) {
+        const latest = await response.json();
+        if (currentRequest === state) currentRequest = latest;
+      }
+    } catch {
+      error.textContent += " 요청 화면을 새로 고쳐 상태를 확인하세요.";
+    }
+  } finally {
+    jobActionPending = false;
+    if (currentRequest) showAutomationState(currentRequest);
+  }
+}
+
+dispatchBtn?.addEventListener("click", () => updateJob("dispatch"));
+refreshJobBtn?.addEventListener("click", () => updateJob("refresh-job"));
+
+async function createAutomationRequest(customerId, conversation) {
+  if (!customerId) throw new Error("고객 ID를 입력해 주세요.");
+  const input = JSON.stringify({ customer_id: customerId, conversation });
+  if (input !== lastInput) {
+    idempotencyKey = crypto.randomUUID();
+    lastInput = input;
+  }
+  const response = await fetch("/api/automation/requests", {
+    method: "POST",
+    headers: { ...jsonHeaders, "Idempotency-Key": idempotencyKey },
+    body: input,
+  });
+  const state = await response.json();
+  if (!response.ok) throw new Error(state.error || "자동화 요청을 저장하지 못했습니다.");
+  currentRequest = state;
+  showAutomationState(state);
+  if (!state.ai_result) showError("AI 분석에 실패했습니다. 상담원 검토 요청을 저장했습니다.");
+  return [state.ai_result || {}, state.fds_result];
+}
 
 const analyzeBtn = document.getElementById("analyze-btn");
 const errorEl = document.getElementById("analyze-error");
 const resultCard = document.getElementById("result-card");
 
+const customerOptions = document.getElementById("customer-options");
+if (customerOptions) {
+  fetch("/api/customers")
+    .then(response => response.ok ? response.json() : [])
+    .then(customers => {
+      for (const customer of customers) {
+        customerOptions.append(new Option(customer.name, customer.customer_id));
+      }
+    })
+    .catch(() => { /* Customer ID can still be entered directly. */ });
+}
+
 function showError(message) {
   errorEl.textContent = message;
   errorEl.classList.remove("hidden");
+}
+
+function renderResult(ai, risk, customerId) {
+  document.getElementById("result-category").value = currentRequest?.incident_category || ai.category || "";
+  document.getElementById("result-summary").value = currentRequest?.incident_summary || ai.summary || "";
+  document.getElementById("result-reply").value = ai.suggested_reply || "";
+  document.getElementById("result-action").textContent =
+    ACTION_LABELS[ai.recommended_action] || ai.recommended_action || "상담원 직접 검토";
+  document.getElementById("result-review").textContent = (ai.requires_human_review || (currentRequest && currentRequest.review_required)) ? "필요" : "불필요";
+
+  const riskSelect = document.getElementById("result-risk");
+  riskSelect.value = currentRequest?.status === "APPROVED" ? (currentRequest.incident_risk_level || "") : (risk.risk_level || "");
+  document.getElementById("result-risk-reasons").textContent =
+    risk.reasons && risk.reasons.length ? "(" + risk.reasons.join(", ") + ")" : "";
+
+  document.getElementById("approve-customer-id").value = customerId;
+  resultCard.classList.remove("hidden");
+}
+
+if (savedRequest) {
+  currentRequest = savedRequest;
+  showAutomationState(savedRequest);
+  renderResult(savedRequest.ai_result || {}, savedRequest.fds_result, savedRequest.customer_id);
+  if (!savedRequest.ai_result) showError("AI 분석에 실패한 요청입니다. 상담 원문을 확인해 주세요.");
 }
 
 analyzeBtn.addEventListener("click", async () => {
@@ -82,34 +245,26 @@ analyzeBtn.addEventListener("click", async () => {
   analyzeBtn.textContent = "분석 중...";
 
   try {
-    const [aiResponse, fdsResponse] = await Promise.all([
-      fetch("/api/ai/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversation }),
-      }),
-      customerId ? fetch(`/api/fds/customers/${encodeURIComponent(customerId)}`) : null,
-    ]);
-    const ai = await aiResponse.json();
-    if (!aiResponse.ok) throw new Error(ai.error || "AI 분석에 실패했습니다.");
+    let ai, risk;
+    if (automationEnabled) {
+      [ai, risk] = await createAutomationRequest(customerId, conversation);
+    } else {
+      const [aiResponse, fdsResponse] = await Promise.all([
+        fetch("/api/ai/analyze", {
+          method: "POST",
+          headers: jsonHeaders,
+          body: JSON.stringify({ conversation }),
+        }),
+        customerId ? fetch(`/api/fds/customers/${encodeURIComponent(customerId)}`) : null,
+      ]);
+      ai = await aiResponse.json();
+      if (!aiResponse.ok) throw new Error(ai.error || "AI 분석에 실패했습니다.");
 
-    let risk = { risk_level: "", reasons: [] };
-    if (fdsResponse && fdsResponse.ok) risk = await fdsResponse.json();
+      risk = { risk_level: "", reasons: [] };
+      if (fdsResponse && fdsResponse.ok) risk = await fdsResponse.json();
+    }
 
-    document.getElementById("result-category").value = ai.category;
-    document.getElementById("result-summary").value = ai.summary;
-    document.getElementById("result-reply").value = ai.suggested_reply;
-    document.getElementById("result-action").textContent =
-      ACTION_LABELS[ai.recommended_action] || ai.recommended_action;
-    document.getElementById("result-review").textContent = ai.requires_human_review ? "필요" : "불필요";
-
-    const riskSelect = document.getElementById("result-risk");
-    riskSelect.value = risk.risk_level || "";
-    document.getElementById("result-risk-reasons").textContent =
-      risk.reasons && risk.reasons.length ? "(" + risk.reasons.join(", ") + ")" : "";
-
-    document.getElementById("approve-customer-id").value = customerId;
-    resultCard.classList.remove("hidden");
+    renderResult(ai, risk, customerId);
   } catch (err) {
     showError(err.message || "AI 분석 중 오류가 발생했습니다.");
   } finally {
@@ -118,9 +273,47 @@ analyzeBtn.addEventListener("click", async () => {
   }
 });
 
+async function submitDecision(decision) {
+  if (analyzeBtn.disabled || !currentRequest || currentRequest.status !== "PENDING_APPROVAL" || !canDecide) return;
+  const approveBtn = document.getElementById("approve-btn");
+  const requestId = currentRequest.request_id;
+  approveBtn.disabled = true;
+  if (rejectBtn) rejectBtn.disabled = true;
+  analyzeBtn.disabled = true;
+  errorEl.classList.add("hidden");
+  try {
+    const fields = decision === "approve" ? {
+      category: document.getElementById("result-category").value,
+      summary: document.getElementById("result-summary").value,
+      risk_level: document.getElementById("result-risk").value,
+    } : {};
+    const url = "/api/automation/requests/" + encodeURIComponent(requestId);
+    const response = await fetch(url + "/" + decision, {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify(fields),
+    });
+    const state = await response.json();
+    if (!response.ok) throw new Error(state.error || "검토 결과를 저장하지 못했습니다.");
+    currentRequest = state;
+  } catch (err) {
+    showError(err.message || "검토 결과를 저장하지 못했습니다.");
+  } finally {
+    showAutomationState(currentRequest);
+    analyzeBtn.disabled = false;
+  }
+}
+
+if (rejectBtn) rejectBtn.addEventListener("click", () => submitDecision("reject"));
+
 let approving = false;
 
 document.getElementById("approve-form").addEventListener("submit", (event) => {
+  if (automationEnabled) {
+    event.preventDefault();
+    submitDecision("approve");
+    return;
+  }
   // 승인 버튼을 여러 번 눌러도 사고가 한 번만 접수되도록 막는다.
   if (approving) {
     event.preventDefault();

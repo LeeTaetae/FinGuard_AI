@@ -32,9 +32,24 @@
 <body>
 <header>
   <b>FinGuard 모의 CRM</b>
+  {% if not local_auth_enabled or local_user %}
   <a id="nav-consultation" href="{{ url_for('consultation_form') }}">상담 입력</a>
   <a id="nav-new" href="{{ url_for('crm_incident_form') }}">사고 접수</a>
   <a id="nav-list" href="{{ url_for('crm_incident_list') }}">접수 목록</a>
+  {% endif %}
+  {% if local_user %}
+  {% if local_user.role in ("SUPERVISOR", "ADMIN") %}
+  <a href="{{ url_for('consultation_review') }}">승인 대기</a>
+  {% endif %}
+  {% if local_user.role == "ADMIN" %}
+  <a href="{{ url_for('auth.users') }}">계정</a>
+  {% endif %}
+  <span>{{ local_user.username }} · {{ local_user.role }}</span>
+  <form method="post" action="{{ url_for('auth.logout') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" style="margin: 0">로그아웃</button>
+  </form>
+  {% endif %}
 </header>
 <main>{% block content %}{% endblock %}</main>
 </body>
